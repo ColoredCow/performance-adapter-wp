@@ -5,7 +5,7 @@ The CC Performance Adapter is a WordPress plugin that collects database health m
 
 ### Data Flow
 ```
-WordPress (Metrics Collection) → BigQuery
+WordPress (Metrics Collection) -> BigQuery <- Looker Studio
 ```
 
 ## Local Development Setup
