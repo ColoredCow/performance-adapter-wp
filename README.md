@@ -5,7 +5,7 @@ The CC Performance Adapter is a WordPress plugin that collects database health m
 
 ### Data Flow
 ```
-WordPress (Metrics Collection) → BigQuery
+WordPress (Metrics Collection) -> BigQuery <- Looker Studio
 ```
 
 ## Prerequisites
@@ -137,13 +137,14 @@ Before setting up this plugin on another machine, ensure you have:
 ### 3. **Install Plugin on New Machine**
 
 #### 3.1 Upload Plugin Files
-- Copy the `cc-adapter` folder to: `wp-content/plugins/cc-adapter/`
+- Copy the code from the same repo to your local machine.
 
 #### 3.2 Add Google Service Account Key
-- Rename your downloaded JSON key file to match the pattern in `.gitignore`
+- Rename your downloaded JSON key file to match the pattern for BigQuery.
+REPLACE 'YOUR_SERVICE_ACCOUNT_KEY.json' with the actual file name ***
   - Example: `wordpress-adapter-1a2b3c4d5e6f.json`
 - Place it in the **WordPress root directory** (same level as `wp-config.php`)
-- **Important**: Add this filename to `.gitignore` (already done in this project)
+- **Important**: Add this filename to `.gitignore`
 
 #### 3.3 Update Plugin Configuration
 Edit `wp-content/plugins/cc-adapter/includes/class-bigquery-client.php`:
