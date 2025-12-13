@@ -23,8 +23,8 @@ If you're setting up this plugin locally for development, follow these quick ste
 #### Step 1: Clone the Repository
 ```bash
 cd wp-content/plugins/
-git clone https://github.com/Ajay-Singh-Adhikari/cc-adapter.git
-cd cc-adapter
+git clone https://github.com/ColoredCow/performance-adapter-wp.git
+cd performance-adapter-wp
 ```
 
 #### Step 2: Configure Your Local Environment
