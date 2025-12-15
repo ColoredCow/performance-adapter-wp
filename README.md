@@ -1,3 +1,4 @@
+
 # CC Performance Adapter - Setup Guide
 
 ## Overview
@@ -183,13 +184,14 @@ Before setting up this plugin on another machine, ensure you have:
 ### 3. **Install Plugin on New Machine**
 
 #### 3.1 Upload Plugin Files
-- Copy the `cc-adapter` folder to: `wp-content/plugins/cc-adapter/`
+- Copy the code from the same repo to your local machine.
 
 #### 3.2 Add Google Service Account Key
-- Rename your downloaded JSON key file to match the pattern in `.gitignore`
+- Rename your downloaded JSON key file to match the pattern for BigQuery.
+REPLACE 'YOUR_SERVICE_ACCOUNT_KEY.json' with the actual file name ***
   - Example: `wordpress-adapter-1a2b3c4d5e6f.json`
 - Place it in the **WordPress root directory** (same level as `wp-config.php`)
-- **Important**: Add this filename to `.gitignore` (already done in this project)
+- **Important**: Add this filename to `.gitignore`
 
 #### 3.3 Update Plugin Configuration
 Edit `wp-content/plugins/cc-adapter/includes/class-bigquery-client.php`:
@@ -345,3 +347,26 @@ For issues or questions:
 - **Current Version**: 1.0.0
 - **Requires**: WordPress 5.0+, PHP 7.4+
 - **License**: GPL v2 or later
+=======
+# Performance Adapter for WordPress
+
+A WordPress plugin that collects important WordPress metrics and sends them to a data warehouse.
+
+## Description
+
+Performance Adapter for WordPress is designed to gather key performance and operational metrics from WordPress sites and transmit them to a centralized data warehouse. This plugin is part of the ColoredCow Proactive Performance tool ecosystem.
+
+## Author
+
+ColoredCow
+
+## Installation
+
+1. Upload the plugin files to the `/wp-content/plugins/performance-adapter-wp` directory
+2. Activate the plugin through the 'Plugins' menu in WordPress
+
+## Requirements
+
+- WordPress 5.0 or higher
+- PHP 7.4 or higher
+

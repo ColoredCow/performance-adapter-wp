@@ -20,13 +20,12 @@ define('CC_ADAPTER_VERSION', '1.0.0');
 require_once CC_ADAPTER_DIR . 'includes/class-data-collector.php';
 require_once CC_ADAPTER_DIR . 'includes/class-bigquery-client.php';
 
-
 function cc_adapter_init()
 {
   add_action('admin_menu', 'cc_adapter_add_admin_menu');
   add_action('cc_adapter_collect_metrics', 'cc_adapter_collect_and_push_metrics');
 
-  // Register AJAX endpoint for manual collection (if it was missed in your original file)
+  // Register AJAX endpoint for manual collection
   add_action('wp_ajax_cc_adapter_collect_now', 'cc_adapter_ajax_collect_now');
 }
 add_action('plugins_loaded', 'cc_adapter_init');
@@ -41,14 +40,9 @@ add_action('wp', function () {
 
 function cc_adapter_get_next_5pm()
 {
-  // Create a timezone object for Indian Standard Time (IST = UTC+5:30)
   $ist_tz = new DateTimeZone('Asia/Kolkata');
   $now = new DateTime('now', $ist_tz);
-
-  // Create 5:00 PM timestamp in IST
   $today_5pm = new DateTime('17:00:00', $ist_tz);
-
-  // If 5:00 PM has already passed today, set to tomorrow
   if ($today_5pm <= $now) {
     $today_5pm->add(new DateInterval('P1D'));
   }
@@ -84,10 +78,8 @@ function cc_adapter_collect_and_push_metrics()
   }
 }
 
-
 function cc_adapter_render_page()
 {
-  // Check user capabilities
   if (! current_user_can('manage_options')) {
     wp_die('Unauthorized');
   }
@@ -208,10 +200,10 @@ function cc_adapter_get_live_data()
 {
   if (! class_exists('CC_Adapter_Data_Collector')) {
     return array(
-      'autoloaded_option_count'     => 'Error',
-      'autoloaded_option_size_bytes'   => 'Error',
-      'autoloaded_option_top_keys'   => array(),
-      'timestamp_utc'         => gmdate('Y-m-d H:i:s'),
+      'autoloaded_option_count'    => 'Error',
+      'autoloaded_option_size_bytes'    => 'Error',
+      'autoloaded_option_top_keys'    => array(),
+      'timestamp_utc'      => gmdate('Y-m-d H:i:s'),
     );
   }
 
@@ -221,10 +213,10 @@ function cc_adapter_get_live_data()
   } catch (Exception $e) {
     error_log('CC Adapter Error: ' . $e->getMessage());
     return array(
-      'autoloaded_option_count'     => 'Error: ' . $e->getMessage(),
-      'autoloaded_option_size_bytes'   => 'N/A',
-      'autoloaded_option_top_keys'   => array(),
-      'timestamp_utc'         => gmdate('Y-m-d H:i:s'),
+      'autoloaded_option_count'    => 'Error: ' . $e->getMessage(),
+      'autoloaded_option_size_bytes'    => 'N/A',
+      'autoloaded_option_top_keys'    => array(),
+      'timestamp_utc'      => gmdate('Y-m-d H:i:s'),
     );
   }
 }
@@ -252,7 +244,7 @@ function cc_adapter_ajax_collect_now()
 
 register_activation_hook(__FILE__, function () {
   wp_clear_scheduled_hook('cc_adapter_collect_metrics');
-  delete_transient('cc_adapter_metrics');
+  delete_transient('cc_adapter_metrics'); // Keep for cleanup, though not strictly needed if live data is used.
 
   // Schedule for 5:00 PM (17:00) daily
   $time = cc_adapter_get_next_5pm();
@@ -261,13 +253,11 @@ register_activation_hook(__FILE__, function () {
   error_log('CC Adapter scheduled for 5:00 PM daily. Next run: ' . gmdate('Y-m-d H:i:s', $time) . ' UTC');
 });
 
-
 register_deactivation_hook(__FILE__, function () {
   wp_clear_scheduled_hook('cc_adapter_collect_metrics');
   delete_transient('cc_adapter_metrics');
 });
 
-// WP-CLI Command
 
 if (defined('WP_CLI') && WP_CLI) {
   class CC_Adapter_CLI_Command
