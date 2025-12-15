@@ -14,6 +14,7 @@ class CC_Adapter_Data_Collector
    */
   public function get_data()
   {
+    // Now just an alias for the core collection method.
     return $this->collect_autoloaded_options();
   }
 
@@ -25,62 +26,49 @@ class CC_Adapter_Data_Collector
   public function collect_autoloaded_options()
   {
     global $wpdb;
+
+    // Autoload clause handles various ways options can be set to autoload
     $autoload_clause = "autoload IN ('yes', 'on', 'auto', 'auto-on')";
+
+    // 1. Count
     $autoloaded_option_count = intval($wpdb->get_var(
       "SELECT COUNT(*) FROM {$wpdb->options} WHERE {$autoload_clause}"
     ));
+
+    // 2. Total Size
     $size_result = $wpdb->get_var(
       "SELECT SUM(OCTET_LENGTH(option_value)) FROM {$wpdb->options} WHERE {$autoload_clause}"
     );
     $autoloaded_option_size_bytes = $size_result ? intval($size_result) : 0;
+
+    // 3. Top 10 Keys by Size
     $top_options = $wpdb->get_results(
       "SELECT option_name, OCTET_LENGTH(option_value) as size 
-			FROM {$wpdb->options} 
-			WHERE {$autoload_clause} 
-			ORDER BY size DESC LIMIT 10" 
+             FROM {$wpdb->options} 
+             WHERE {$autoload_clause} 
+             ORDER BY size DESC LIMIT 10"
     );
 
     $autoloaded_option_top_keys = array();
     if ($top_options) {
       foreach ($top_options as $option) {
-        $autoloaded_option_top_keys[$option->option_name] = intval($option->size);
+        // Ensure the option name is clean before using it as a key
+        $key = sanitize_key($option->option_name);
+        $autoloaded_option_top_keys[$key] = intval($option->size);
       }
     }
 
     $timestamp_utc = gmdate('Y-m-d H:i:s');
+
     $data = array(
-      'autoloaded_option_count'    => $autoloaded_option_count,
+      'autoloaded_option_count'      => $autoloaded_option_count,
       'autoloaded_option_size_bytes' => $autoloaded_option_size_bytes,
-      'autoloaded_option_top_keys'    => $autoloaded_option_top_keys,
-      'timestamp_utc'      => $timestamp_utc,
+      'autoloaded_option_top_keys'   => $autoloaded_option_top_keys,
+      'timestamp_utc'                => $timestamp_utc,
     );
 
     return $data;
   }
 
-  /**
-   * Format collected metrics for BigQuery insertion.
-   *
-   * @param array $metrics The collected metrics array.
-   * @return array
-   */
-  public function format_for_bigquery($metrics)
-  {
-    $site_url = get_home_url();
-    $timestamp = gmdate('Y-m-d\TH:i:s\Z');
-
-    return array(
-      'platform'      => 'wordpress',
-      'metric_type'    => 'db_health',
-      'metric_key'    => 'autoloaded_options',
-      'metric_value'    => $metrics['autoloaded_option_size_bytes'],
-      'context'      => array(
-        'autoloaded_option_count'      => $metrics['autoloaded_option_count'],
-        'autoloaded_option_size_bytes'    => $metrics['autoloaded_option_size_bytes'],
-        'autoloaded_option_top_keys'    => $metrics['autoloaded_option_top_keys'],
-        'site_identifier'           => $site_url,
-      ),
-      'timestamp_utc' => $timestamp,
-    );
-  }
+  // NOTE: The public function format_for_bigquery() has been removed.
 }
