@@ -155,7 +155,7 @@ function cc_adapter_render_page()
           </td>
         </tr>
         <tr>
-          <td><strong><?php esc_html_e('Timestamp (UTC)', 'cc-adapter'); ?></strong></td>
+          <td><strong><?php esc_html_e('Last Fetched', 'cc-adapter'); ?></strong></td>
           <td><?php echo esc_html(isset($data['timestamp_utc']) ? $data['timestamp_utc'] : 'N/A'); ?></td>
         </tr>
       </tbody>
@@ -283,7 +283,7 @@ if (defined('WP_CLI') && WP_CLI) {
      *
      * ## EXAMPLES
      *
-     *     wp cc-perf collect
+     * wp cc-perf collect
      */
     public function collect()
     {

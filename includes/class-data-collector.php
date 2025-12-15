@@ -10,7 +10,7 @@ class CC_Adapter_Data_Collector
 {
 
   //Get all collected data
-  
+
   public function get_data()
   {
     $cached = get_transient('cc_adapter_metrics');
@@ -23,25 +23,31 @@ class CC_Adapter_Data_Collector
   }
 
   // Collect autoloaded options metrics
- 
+
   public function collect_autoloaded_options()
   {
     global $wpdb;
 
-    // Get autoloaded options count
+    // Define the robust autoload clause
+    $autoload_clause = "autoload IN ('yes', 'on', 'auto', 'auto-on')";
+
+    // FIX 1: Correctly get the AUTOLOADED OPTIONS COUNT using COUNT(*)
     $autoloaded_option_count = intval($wpdb->get_var(
-      "SELECT COUNT(*) FROM {$wpdb->options} WHERE autoload = 'yes'"
+      "SELECT COUNT(*) FROM {$wpdb->options} WHERE {$autoload_clause}"
     ));
 
-    // Get autoloaded options total size
+    // FIX 2: Correctly get the AUTOLOADED OPTIONS TOTAL SIZE using the robust clause
     $size_result = $wpdb->get_var(
-      "SELECT SUM(OCTET_LENGTH(option_value)) FROM {$wpdb->options} WHERE autoload = 'yes'"
+      "SELECT SUM(OCTET_LENGTH(option_value)) FROM {$wpdb->options} WHERE {$autoload_clause}"
     );
     $autoloaded_option_size_bytes = $size_result ? intval($size_result) : 0;
 
-    // Get top 5 autoloaded options by size with their sizes
+    // FIX 3: Correctly get top 5 autoloaded options using the robust clause
     $top_options = $wpdb->get_results(
-      "SELECT option_name, OCTET_LENGTH(option_value) as size FROM {$wpdb->options} WHERE autoload = 'yes' ORDER BY size DESC LIMIT 5"
+      "SELECT option_name, OCTET_LENGTH(option_value) as size 
+             FROM {$wpdb->options} 
+             WHERE {$autoload_clause} 
+             ORDER BY size DESC LIMIT 5"
     );
 
     $autoloaded_option_top_keys = array();
@@ -68,22 +74,22 @@ class CC_Adapter_Data_Collector
   }
 
   // Format data for BigQuery
-  
+
   public function format_for_bigquery($metrics)
   {
     $site_url = get_home_url();
     $timestamp = gmdate('Y-m-d\TH:i:s\Z');
 
     return array(
-      'platform'     => 'wordpress',
-      'metric_type'  => 'db_health',
-      'metric_key'   => 'autoloaded_options',
-      'metric_value' => $metrics['autoloaded_option_size_bytes'],
-      'context'      => array(
-        'autoloaded_option_count'    => $metrics['autoloaded_option_count'],
+      'platform'      => 'wordpress',
+      'metric_type'   => 'db_health',
+      'metric_key'    => 'autoloaded_options',
+      'metric_value'  => $metrics['autoloaded_option_size_bytes'],
+      'context'       => array(
+        'autoloaded_option_count'      => $metrics['autoloaded_option_count'],
         'autoloaded_option_size_bytes' => $metrics['autoloaded_option_size_bytes'],
-        'autoloaded_option_top_keys' => $metrics['autoloaded_option_top_keys'],
-        'site_identifier'           => $site_url,
+        'autoloaded_option_top_keys'   => $metrics['autoloaded_option_top_keys'],
+        'site_identifier'              => $site_url,
       ),
       'timestamp_utc' => $timestamp,
     );
