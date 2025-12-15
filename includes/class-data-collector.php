@@ -42,6 +42,7 @@ class CC_Adapter_Data_Collector
     );
 
     $autoloaded_option_top_keys = array();
+
     if ($top_options) {
       foreach ($top_options as $option) {
         $key = sanitize_key($option->option_name);
@@ -49,13 +50,12 @@ class CC_Adapter_Data_Collector
       }
     }
 
-    $timestamp_utc = gmdate('Y-m-d H:i:s');
-
     $data = array(
-      'autoloaded_option_count'      => $autoloaded_option_count,
-      'autoloaded_option_size_bytes' => $autoloaded_option_size_bytes,
-      'autoloaded_option_top_keys'   => $autoloaded_option_top_keys,
-      'timestamp_utc'                => $timestamp_utc,
+      'autoloaded_option' => array(
+        'count' => $autoloaded_option_count,
+        'size_bytes' => $autoloaded_option_size_bytes,
+        'top_size_keys' => $autoloaded_option_top_keys,
+      )
     );
 
     return $data;

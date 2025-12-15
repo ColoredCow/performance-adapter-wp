@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Plugin Name: CC Performance Adapter
- * Plugin URI: https://example.com/cc-adapter
+ * Plugin Name: ProPerf WordPress Adapter
+ * Plugin URI: https://coloredcow.com
  * Description: Collects and displays database health metrics (autoloaded options)
  * Version: 1.0.0
- * Author: Your Name
+ * Author: ColoredCow
  * License: GPL v2 or later
  */
 
@@ -16,6 +16,7 @@ if (! defined('ABSPATH')) {
 define('CC_ADAPTER_DIR', plugin_dir_path(__FILE__));
 define('CC_ADAPTER_URL', plugin_dir_url(__FILE__));
 define('CC_ADAPTER_VERSION', '1.0.0');
+
 require_once CC_ADAPTER_DIR . 'includes/class-data-collector.php';
 
 function cc_adapter_init()
@@ -49,10 +50,10 @@ function cc_adapter_add_admin_menu()
 {
   add_submenu_page(
     'tools.php',
-    'Costwatch',
-    'Costwatch',
+    'ProPerf',
+    'ProPerf',
     'manage_options',
-    'cc-adapter-costwatch',
+    'cc-adapter-properf',
     'cc_adapter_render_page'
   );
 }
@@ -63,19 +64,16 @@ function cc_adapter_render_page()
     wp_die('Unauthorized');
   }
 
-  $data = cc_adapter_get_live_data();
+  $metrics = cc_adapter_get_live_data();
 
-  $top_keys = isset($data['autoloaded_option_top_keys']) && is_array($data['autoloaded_option_top_keys']) ? $data['autoloaded_option_top_keys'] : array();
+  $autoloaded_data_metrics = $metrics['autoloaded_option'];
 
+  $count         = $autoloaded_data_metrics['count'];
+  $size_bytes    = $autoloaded_data_metrics['size_bytes'];
+  $top_size_keys = $autoloaded_data_metrics['top_size_keys'];
 ?>
   <div class="wrap">
-    <h1><?php esc_html_e('Costwatch Dashboard', 'cc-adapter'); ?></h1>
-
-    <div style="margin-bottom: 20px;">
-      <p>
-        <strong>Data Last Collected:</strong> <?php echo esc_html($data['timestamp_utc']); ?> (UTC)
-      </p>
-    </div>
+    <h1><?php esc_html_e('ProPerf WordPress Metrics', 'cc-adapter'); ?></h1>
 
     <h2><?php esc_html_e('Summary Metrics', 'cc-adapter'); ?></h2>
     <table class="widefat striped">
@@ -88,33 +86,29 @@ function cc_adapter_render_page()
       <tbody>
         <tr>
           <td><strong><?php esc_html_e('Autoloaded Option Count', 'cc-adapter'); ?></strong></td>
-          <td><?php echo esc_html(isset($data['autoloaded_option_count']) ? number_format($data['autoloaded_option_count']) : 'N/A'); ?></td>
+          <td><?php echo esc_html( number_format( $count ) ); ?></td>
         </tr>
         <tr>
-          <td><strong><?php esc_html_e('Autoloaded Option Size (Bytes)', 'cc-adapter'); ?></strong></td>
-          <td><?php echo esc_html(isset($data['autoloaded_option_size_bytes']) ? number_format($data['autoloaded_option_size_bytes']) . ' bytes' : 'N/A'); ?></td>
-        </tr>
-        <tr>
-          <td><strong><?php esc_html_e('Last Fetched (Live)', 'cc-adapter'); ?></strong></td>
-          <td><?php echo esc_html(isset($data['timestamp_utc']) ? $data['timestamp_utc'] : 'N/A'); ?> (UTC)</td>
+          <td><strong><?php esc_html_e('Autoloaded Option Size', 'cc-adapter'); ?></strong></td>
+          <td><?php printf('%d KB', $size_bytes / 1024 ); ?></td>
         </tr>
       </tbody>
     </table>
 
-    <h2 style="margin-top: 30px;"><?php esc_html_e('Autoloaded Option Top Keys', 'cc-adapter'); ?></h2>
-    <?php if (! empty($top_keys)) : ?>
+    <h2 style="margin-top: 30px;"><?php esc_html_e('Top 10 Autoloaded Options by Size', 'cc-adapter'); ?></h2>
+    <?php if (! empty($top_size_keys)) : ?>
       <table class="widefat striped">
         <thead>
           <tr>
             <th><strong><?php esc_html_e('Option Name', 'cc-adapter'); ?></strong></th>
-            <th><strong><?php esc_html_e('Size (Bytes)', 'cc-adapter'); ?></strong></th>
+            <th><strong><?php esc_html_e('Size', 'cc-adapter'); ?></strong></th>
           </tr>
         </thead>
         <tbody>
-          <?php foreach ($top_keys as $key => $size) : ?>
+          <?php foreach ($top_size_keys as $key => $size) : ?>
             <tr>
-              <td><?php echo esc_html($key); ?></td>
-              <td><?php echo esc_html(number_format($size) . ' bytes'); ?></td>
+              <td><?php echo esc_html( $key ); ?></td>
+              <td><?php printf('%d KB', $size / 1024 ); ?></td>
             </tr>
           <?php endforeach; ?>
         </tbody>
