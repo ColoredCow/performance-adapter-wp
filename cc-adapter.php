@@ -96,7 +96,7 @@ function cc_adapter_render_page()
 
     <div style="margin-bottom: 20px;">
       <p>
-        <strong>Last Data Calculation:</strong> <?php echo esc_html($data['timestamp_utc']); ?> (UTC)
+        <strong>Last BigQuery Sync:</strong> <?php echo esc_html($data['timestamp_utc']); ?> (UTC)
       </p>
       <button class="button button-primary" id="cc-adapter-collect-now">
         <?php esc_html_e('Push Data to BigQuery', 'cc-adapter'); ?>
