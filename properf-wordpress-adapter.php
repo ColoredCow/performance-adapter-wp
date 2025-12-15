@@ -128,7 +128,6 @@ function cc_adapter_get_live_data()
       'autoloaded_option_count'      => 'Error: Collector Class Missing',
       'autoloaded_option_size_bytes' => 'Error',
       'autoloaded_option_top_keys'   => array(),
-      'timestamp_utc'                => gmdate('Y-m-d H:i:s'),
     );
   }
 
@@ -141,55 +140,19 @@ function cc_adapter_get_live_data()
       'autoloaded_option_count'      => 'Error: ' . $e->getMessage(),
       'autoloaded_option_size_bytes' => 'N/A',
       'autoloaded_option_top_keys'   => array(),
-      'timestamp_utc'                => gmdate('Y-m-d H:i:s'),
     );
   }
 }
 
-register_activation_hook(__FILE__, function () {
-  wp_clear_scheduled_hook('cc_adapter_collect_metrics');
-  $time = cc_adapter_get_next_5pm();
-  wp_schedule_event($time, 'daily', 'cc_adapter_collect_metrics');
+// register_activation_hook(__FILE__, function () {
+//   wp_clear_scheduled_hook('cc_adapter_collect_metrics');
+//   $time = cc_adapter_get_next_5pm();
+//   wp_schedule_event($time, 'daily', 'cc_adapter_collect_metrics');
 
-  error_log('CC Adapter scheduling hook created (though currently inert). Next run: ' . gmdate('Y-m-d H:i:s', $time) . ' UTC');
-});
+//   error_log('CC Adapter scheduling hook created (though currently inert). Next run: ' . gmdate('Y-m-d H:i:s', $time) . ' UTC');
+// });
 
-register_deactivation_hook(__FILE__, function () {
-  wp_clear_scheduled_hook('cc_adapter_collect_metrics');
-});
+// register_deactivation_hook(__FILE__, function () {
+//   wp_clear_scheduled_hook('cc_adapter_collect_metrics');
+// });
 
-if (defined('WP_CLI') && WP_CLI) {
-  class CC_Adapter_CLI_Command
-  {
-  
-    public function status()
-    {
-      WP_CLI::line('Collecting current autoloaded options data...');
-
-      try {
-        $data = cc_adapter_get_live_data();
-
-        WP_CLI::line('--- Autoloaded Options Health ---');
-        WP_CLI::line(sprintf('Count: %s', number_format($data['autoloaded_option_count'])));
-        WP_CLI::line(sprintf('Total Size: %s bytes', number_format($data['autoloaded_option_size_bytes'])));
-        WP_CLI::line(sprintf('Timestamp (UTC): %s', $data['timestamp_utc']));
-        WP_CLI::line('--- Top 10 Largest Keys ---');
-
-        if (empty($data['autoloaded_option_top_keys'])) {
-          WP_CLI::line('No top keys found.');
-        } else {
-          $keys = array();
-          foreach ($data['autoloaded_option_top_keys'] as $key => $size) {
-            $keys[] = array('Option Name' => $key, 'Size (Bytes)' => number_format($size));
-          }
-          WP_CLI\Utils\format_items('table', $keys, array('Option Name', 'Size (Bytes)'));
-        }
-
-        WP_CLI::success('Data collected successfully!');
-      } catch (Exception $e) {
-        WP_CLI::error('Failed to collect metrics: ' . $e->getMessage());
-      }
-    }
-  }
-  WP_CLI::add_command('cc-perf', 'CC_Adapter_CLI_Command');
-}
