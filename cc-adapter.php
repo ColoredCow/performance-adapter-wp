@@ -16,29 +16,15 @@ if (! defined('ABSPATH')) {
 define('CC_ADAPTER_DIR', plugin_dir_path(__FILE__));
 define('CC_ADAPTER_URL', plugin_dir_url(__FILE__));
 define('CC_ADAPTER_VERSION', '1.0.0');
-
-// NOTE: BigQuery Client dependency removed.
 require_once CC_ADAPTER_DIR . 'includes/class-data-collector.php';
 
 function cc_adapter_init()
 {
   add_action('admin_menu', 'cc_adapter_add_admin_menu');
-
-  // NOTE: The 'cc_adapter_collect_metrics' hook is now DEPRECATED 
-  // since we are not pushing data, but we keep the scheduling 
-  // logic below for future use or simple maintenance.
 }
 add_action('plugins_loaded', 'cc_adapter_init');
-
-// --- Scheduling Logic (Kept for now, but the action is removed) ---
-
-// NOTE: Since the primary action (pushing to BQ) is removed, 
-// the scheduled hook no longer executes any code. 
-// If data collection itself was to be cached, this would be the place.
-// As cc_adapter_get_live_data() is now always fresh, this block is mostly inert.
 add_action('wp', function () {
   if (!wp_next_scheduled('cc_adapter_collect_metrics')) {
-    // Schedule for 5:00 PM (17:00) daily
     $time = cc_adapter_get_next_5pm();
     wp_schedule_event($time, 'daily', 'cc_adapter_collect_metrics');
   }
@@ -46,7 +32,6 @@ add_action('wp', function () {
 
 function cc_adapter_get_next_5pm()
 {
-  // Use the site's default timezone if possible, or fall back to UTC/IST
   $tz = get_option('timezone_string') ?: 'UTC';
   $target_tz = new DateTimeZone($tz);
 
@@ -56,11 +41,9 @@ function cc_adapter_get_next_5pm()
   if ($today_5pm <= $now) {
     $today_5pm->add(new DateInterval('P1D'));
   }
-  // Return timestamp in UTC for wp_schedule_event, as it expects UTC
   return $today_5pm->getTimestamp();
 }
 
-// --- Admin Menu and Rendering ---
 
 function cc_adapter_add_admin_menu()
 {
@@ -74,21 +57,14 @@ function cc_adapter_add_admin_menu()
   );
 }
 
-// NOTE: This function is now removed as it contained BigQuery logic.
-/*
-function cc_adapter_collect_and_push_metrics() { ... }
-*/
-
 function cc_adapter_render_page()
 {
   if (! current_user_can('manage_options')) {
     wp_die('Unauthorized');
   }
 
-  // Get live data (This will now always be fresh data from the database)
   $data = cc_adapter_get_live_data();
 
-  // Separate the top keys data for the new table
   $top_keys = isset($data['autoloaded_option_top_keys']) && is_array($data['autoloaded_option_top_keys']) ? $data['autoloaded_option_top_keys'] : array();
 
 ?>
@@ -164,7 +140,6 @@ function cc_adapter_get_live_data()
 
   try {
     $collector = new CC_Adapter_Data_Collector();
-    // Since get_data now directly calls collect_autoloaded_options, it's always fresh
     return $collector->get_data();
   } catch (Exception $e) {
     error_log('CC Adapter Error: ' . $e->getMessage());
@@ -177,17 +152,8 @@ function cc_adapter_get_live_data()
   }
 }
 
-// NOTE: AJAX endpoint for manual collection removed
-/*
-function cc_adapter_ajax_collect_now() { ... }
-*/
-
-// --- Activation / Deactivation Hooks ---
-
 register_activation_hook(__FILE__, function () {
   wp_clear_scheduled_hook('cc_adapter_collect_metrics');
-
-  // Schedule for 5:00 PM (17:00) daily
   $time = cc_adapter_get_next_5pm();
   wp_schedule_event($time, 'daily', 'cc_adapter_collect_metrics');
 
@@ -198,19 +164,10 @@ register_deactivation_hook(__FILE__, function () {
   wp_clear_scheduled_hook('cc_adapter_collect_metrics');
 });
 
-
-// --- WP-CLI Command ---
-
 if (defined('WP_CLI') && WP_CLI) {
   class CC_Adapter_CLI_Command
   {
-    /**
-     * Simply collects and displays the current metric data.
-     *
-     * ## EXAMPLES
-     *
-     * wp cc-perf status
-     */
+  
     public function status()
     {
       WP_CLI::line('Collecting current autoloaded options data...');
@@ -240,7 +197,5 @@ if (defined('WP_CLI') && WP_CLI) {
       }
     }
   }
-
-  // Renaming the command from 'collect' to 'status' to reflect its new purpose
   WP_CLI::add_command('cc-perf', 'CC_Adapter_CLI_Command');
 }
