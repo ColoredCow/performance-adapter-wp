@@ -31,7 +31,6 @@ class CC_Adapter_BigQuery_Client
 
   private function get_access_token()
   {
-    // Check if token is cached
     $cached_token = get_transient('cc_adapter_bq_token');
     if ($cached_token) {
       return $cached_token;
