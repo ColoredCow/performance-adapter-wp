@@ -6,8 +6,54 @@ The CC Performance Adapter is a WordPress plugin that collects database health m
 
 ### Data Flow
 ```
-WordPress (Metrics Collection) → BigQuery
+WordPress (Metrics Collection) -> BigQuery <- Looker Studio
 ```
+
+## Local Development Setup
+
+### Quick Start for Developers
+
+If you're setting up this plugin locally for development, follow these quick steps:
+
+#### Prerequisites for Local Environment
+- **XAMPP / Local WordPress** (or any local WordPress installation)
+- **Git** (for cloning the repository)
+- **PHP 7.4+** (usually included with XAMPP)
+- **A Google Cloud project** (for testing BigQuery integration)
+
+#### Step 1: Clone the Repository
+```bash
+cd wp-content/plugins/
+git clone https://github.com/ColoredCow/performance-adapter-wp.git
+cd performance-adapter-wp
+```
+
+#### Step 2: Configure Your Local Environment
+1. **Copy the template configuration** (if available) or create your own
+2. **Download your Google Cloud service account key** (see Step 1 in the full setup below)
+3. **Place the JSON key file** in your WordPress root directory (same level as `wp-config.php`)
+4. **Update** `includes/class-bigquery-client.php` with your GCP Project ID and credentials
+
+#### Step 3: Activate the Plugin
+1. Go to WordPress Admin Dashboard
+2. Navigate to **Plugins**
+3. Find "CC Performance Adapter" and click **Activate**
+
+#### Step 4: Test Locally
+- Go to **Tools → Costwatch**
+- Click "Collect & Push Now" to manually trigger data collection
+- Check BigQuery to verify data is being received
+
+#### Development Notes
+- **Debug Mode**: Enable WP_DEBUG in `wp-config.php` to see detailed logs:
+  ```php
+  define('WP_DEBUG', true);
+  define('WP_DEBUG_LOG', true);
+  define('WP_DEBUG_DISPLAY', false);
+  ```
+- **Check Logs**: View `wp-content/debug.log` for any errors
+- **WP-CLI Testing**: Run `wp cc-perf collect` to manually trigger collection
+- **Verify Cron**: Ensure `DISABLE_WP_CRON` is set to `false` in `wp-config.php`
 
 ## Prerequisites
 
@@ -138,13 +184,14 @@ Before setting up this plugin on another machine, ensure you have:
 ### 3. **Install Plugin on New Machine**
 
 #### 3.1 Upload Plugin Files
-- Copy the `cc-adapter` folder to: `wp-content/plugins/cc-adapter/`
+- Copy the code from the same repo to your local machine.
 
 #### 3.2 Add Google Service Account Key
-- Rename your downloaded JSON key file to match the pattern in `.gitignore`
+- Rename your downloaded JSON key file to match the pattern for BigQuery.
+REPLACE 'YOUR_SERVICE_ACCOUNT_KEY.json' with the actual file name ***
   - Example: `wordpress-adapter-1a2b3c4d5e6f.json`
 - Place it in the **WordPress root directory** (same level as `wp-config.php`)
-- **Important**: Add this filename to `.gitignore` (already done in this project)
+- **Important**: Add this filename to `.gitignore`
 
 #### 3.3 Update Plugin Configuration
 Edit `wp-content/plugins/cc-adapter/includes/class-bigquery-client.php`:

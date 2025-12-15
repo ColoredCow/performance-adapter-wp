@@ -31,7 +31,6 @@ class CC_Adapter_BigQuery_Client
 
   private function get_access_token()
   {
-    // Check if token is cached
     $cached_token = get_transient('cc_adapter_bq_token');
     if ($cached_token) {
       return $cached_token;
@@ -61,7 +60,6 @@ class CC_Adapter_BigQuery_Client
       return false;
     }
 
-    // Cache for 50 minutes (tokens last 1 hour)
     set_transient('cc_adapter_bq_token', $body['access_token'], 50 * MINUTE_IN_SECONDS);
 
     return $body['access_token'];
@@ -100,7 +98,7 @@ class CC_Adapter_BigQuery_Client
     return $signature_input . '.' . $signature_encoded;
   }
 
- 
+
   private function base64url_encode($data)
   {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
