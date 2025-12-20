@@ -40,34 +40,19 @@ class CC_Adapter_Data_Collector
       }
     }
 
-<<<<<<< Updated upstream
-    $timestamp_utc = gmdate('Y-m-d H:i:s');
-
-    $data = array(
-      'autoloaded_option_count'      => $autoloaded_option_count,
-      'autoloaded_option_size_bytes' => $autoloaded_option_size_bytes,
-      'autoloaded_option_top_keys'   => $autoloaded_option_top_keys,
-      'timestamp_utc'                => $timestamp_utc,
-=======
     return array(
       'autoloaded_option' => array(
         'count'         => $autoloaded_option_count,
         'size_bytes'    => $autoloaded_option_size_bytes,
         'top_size_keys' => $autoloaded_option_top_keys,
       )
->>>>>>> Stashed changes
     );
   }
 
-  /**
-   * Format data for BigQuery Schema
-   */
   public function format_for_bigquery($metrics)
   {
     $site_url = get_site_url();
     $timestamp = gmdate('Y-m-d H:i:s');
-
-    // Create the vertical numbered list for metric_key
     $vertical_keys = "";
     if (!empty($metrics['autoloaded_option']['top_size_keys'])) {
       $i = 1;
@@ -76,8 +61,6 @@ class CC_Adapter_Data_Collector
         $i++;
       }
     }
-
-    // Return SINGLE row
     return array(
       'platform'          => 'WordPress',
       'metric_key'        => trim($vertical_keys),

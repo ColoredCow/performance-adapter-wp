@@ -111,7 +111,6 @@ class CC_Adapter_BigQuery_Client
     if (!empty($this->last_error)) return false;
 
     $collector = new CC_Adapter_Data_Collector();
-    // This returns a SINGLE formatted array based on your new schema
     $formatted_data = $collector->format_for_bigquery($metrics);
 
     $access_token = $this->get_access_token();
@@ -145,15 +144,12 @@ class CC_Adapter_BigQuery_Client
       ]
     ];
 
-    // Construct Multipart Body
     $body = "--" . $boundary . "\r\n";
     $body .= "Content-Type: application/json; charset=UTF-8\r\n\r\n";
     $body .= json_encode($job_config) . "\r\n";
     $body .= "--" . $boundary . "\r\n";
     $body .= "Content-Type: application/octet-stream\r\n\r\n";
-
-    // UPDATED: Wrap the single formatted row in an array to ensure the loop works
-    // and sends valid JSON rows (NDJSON)
+    
     $rows_to_push = array($formatted_data);
 
     foreach ($rows_to_push as $row) {
