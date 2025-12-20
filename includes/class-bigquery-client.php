@@ -39,7 +39,7 @@ class CC_Adapter_BigQuery_Client
     $client_email = $this->get_config_value('BIGQUERY_CLIENT_EMAIL');
 
     if (empty($project_id) || empty($private_key) || empty($client_email)) {
-      $this->last_error = "BigQuery Configuration Missing: Check .env file.";
+      $this->last_error = "BigQuery Configuration Missing";
       return;
     }
     $keyFile = [
