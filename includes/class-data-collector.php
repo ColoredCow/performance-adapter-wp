@@ -61,6 +61,7 @@ class CC_Adapter_Data_Collector
         $i++;
       }
     }
+
     return array(
       'platform'          => 'WordPress',
       'metric_key'        => trim($vertical_keys),

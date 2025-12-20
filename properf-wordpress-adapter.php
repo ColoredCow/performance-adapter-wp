@@ -13,10 +13,14 @@ if (! defined('ABSPATH')) {
   exit;
 }
 
+// 1. Basic Constants
 define('CC_ADAPTER_DIR', plugin_dir_path(__FILE__));
 define('CC_ADAPTER_URL', plugin_dir_url(__FILE__));
 define('CC_ADAPTER_VERSION', '1.0.0');
 
+/**
+ * 2. Load .env Variables
+ */
 function cc_adapter_load_env()
 {
   $env_file = ABSPATH . '.env';
@@ -37,6 +41,7 @@ function cc_adapter_load_env()
 }
 cc_adapter_load_env();
 
+// 3. Include necessary files
 require_once CC_ADAPTER_DIR . 'includes/class-data-collector.php';
 
 function cc_adapter_init()
@@ -45,6 +50,7 @@ function cc_adapter_init()
 }
 add_action('plugins_loaded', 'cc_adapter_init');
 
+// Handle Manual Push Button
 add_action('admin_init', function () {
   if (isset($_POST['cc_push_to_bq']) && check_admin_referer('cc_push_action', 'cc_push_nonce')) {
     require_once CC_ADAPTER_DIR . 'includes/class-bigquery-client.php';
@@ -100,6 +106,10 @@ function cc_adapter_add_admin_menu()
   );
 }
 
+/**
+ * UPDATED FUNCTION:
+ * Now appends the Timezone or Offset (e.g., UTC+5:30) to the date string.
+ */
 function cc_adapter_render_page()
 {
   if (! current_user_can('manage_options')) {
