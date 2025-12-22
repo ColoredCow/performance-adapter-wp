@@ -110,23 +110,45 @@ function properf_get_next_5pm() {
 }
 
 /**
- * Add admin menu item.
+ * Add admin menu items.
  */
 function properf_add_admin_menu() {
-	add_submenu_page(
-		'tools.php',
-		'ProPerf',
+	// Add top-level menu.
+	add_menu_page(
+		__( 'ProPerf Dashboard', 'properf' ),
 		'ProPerf',
 		'manage_options',
 		'properf',
-		'properf_render_page'
+		'properf_render_dashboard',
+		'dashicons-chart-line',
+		30
+	);
+
+	// Add Dashboard submenu (first submenu item replaces the parent menu title).
+	add_submenu_page(
+		'properf',
+		__( 'ProPerf Dashboard', 'properf' ),
+		__( 'Dashboard', 'properf' ),
+		'manage_options',
+		'properf',
+		'properf_render_dashboard'
+	);
+
+	// Add Settings submenu.
+	add_submenu_page(
+		'properf',
+		__( 'ProPerf Settings', 'properf' ),
+		__( 'Settings', 'properf' ),
+		'manage_options',
+		'properf-settings',
+		'properf_render_settings'
 	);
 }
 
 /**
- * Render admin page.
+ * Render Dashboard page.
  */
-function properf_render_page() {
+function properf_render_dashboard() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( 'Unauthorized' );
 	}
@@ -218,6 +240,22 @@ function properf_render_page() {
 		<?php else : ?>
 			<p><?php esc_html_e( 'No autoloaded option keys found or an error occurred.', 'properf' ); ?></p>
 		<?php endif; ?>
+	</div>
+	<?php
+}
+
+/**
+ * Render Settings page.
+ */
+function properf_render_settings() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( 'Unauthorized' );
+	}
+	?>
+	<div class="wrap">
+		<h1><?php esc_html_e( 'ProPerf Settings', 'properf' ); ?></h1>
+		<p><?php esc_html_e( 'Configure ProPerf plugin settings here.', 'properf' ); ?></p>
+		<!-- Settings form will be added here -->
 	</div>
 	<?php
 }
