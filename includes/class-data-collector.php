@@ -2,7 +2,7 @@
 /**
  * Data Collector Class
  *
- * @package CC_Adapter
+ * @package ProPerf
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -10,9 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class CC_Adapter_Data_Collector
+ * Class ProPerf_Data_Collector
  */
-class CC_Adapter_Data_Collector {
+class ProPerf_Data_Collector {
 
 	/**
 	 * Get collected data.

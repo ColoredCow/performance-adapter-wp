@@ -2,7 +2,7 @@
 /**
  * BigQuery Client Class
  *
- * @package CC_Adapter
+ * @package ProPerf
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,7 +14,7 @@ $autoload_path = plugin_dir_path( dirname( __FILE__ ) ) . 'vendor/autoload.php';
 if ( file_exists( $autoload_path ) ) {
 	require_once $autoload_path;
 } else {
-	error_log( 'CC Adapter Error: vendor/autoload.php not found. Please run "composer install" in the plugin directory.' );
+	error_log( 'ProPerf Error: vendor/autoload.php not found. Please run "composer install" in the plugin directory.' );
 	return;
 }
 
@@ -22,9 +22,9 @@ use Google\Cloud\BigQuery\BigQueryClient;
 use Google\Cloud\Core\Exception\GoogleException;
 
 /**
- * Class CC_Adapter_BigQuery_Client
+ * Class ProPerf_BigQuery_Client
  */
-class CC_Adapter_BigQuery_Client {
+class ProPerf_BigQuery_Client {
 
 	/**
 	 * BigQuery client instance.
@@ -117,7 +117,7 @@ class CC_Adapter_BigQuery_Client {
 			return false;
 		}
 
-		$collector      = new CC_Adapter_Data_Collector();
+		$collector      = new ProPerf_Data_Collector();
 		$formatted_data = $collector->format_for_bigquery( $metrics );
 		if ( isset( $formatted_data['metric_count'] ) ) {
 			$formatted_data['metric_count'] = (string) $formatted_data['metric_count'];
@@ -167,7 +167,7 @@ class CC_Adapter_BigQuery_Client {
 				return false;
 			}
 
-			update_option( 'cc_adapter_bq_last_sync', time() );
+			update_option( 'properf_bq_last_sync', time() );
 			return true;
 		} catch ( GoogleException $e ) {
 			$this->last_error = 'Google SDK Error: ' . $e->getMessage();

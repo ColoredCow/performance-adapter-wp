@@ -194,7 +194,7 @@ REPLACE 'YOUR_SERVICE_ACCOUNT_KEY.json' with the actual file name ***
 - **Important**: Add this filename to `.gitignore`
 
 #### 3.3 Update Plugin Configuration
-Edit `wp-content/plugins/cc-adapter/includes/class-bigquery-client.php`:
+Edit `wp-content/plugins/properf/includes/class-bigquery-client.php`:
 
 Find the `__construct()` method and update:
 
@@ -258,7 +258,7 @@ You should see your WordPress metrics!
 - **Frequency**: Daily
 - **Location**: Managed by WordPress cron
 
-To change the collection time, edit `cc_adapter_get_next_5pm()` in `cc-adapter.php`:
+To change the collection time, edit `properf_get_next_5pm()` in `properf-wordpress-adapter.php`:
 ```php
 $today_5pm = new DateTime('17:00:00', $ist_tz);  // Change 17:00 to your desired time
 ```
@@ -297,8 +297,8 @@ $today_5pm = new DateTime('17:00:00', $ist_tz);  // Change 17:00 to your desired
 ## File Structure
 
 ```
-wp-content/plugins/cc-adapter/
-├── cc-adapter.php                 # Main plugin file
+wp-content/plugins/properf/
+├── properf-wordpress-adapter.php  # Main plugin file
 ├── includes/
 │   ├── class-data-collector.php   # Collects metrics from WordPress
 │   └── class-bigquery-client.php  # Handles BigQuery API communication
