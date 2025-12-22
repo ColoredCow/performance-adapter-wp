@@ -52,34 +52,36 @@ function properf_init() {
 }
 add_action( 'plugins_loaded', 'properf_init' );
 
-add_action(
-	'admin_init',
-	function() {
-		if ( isset( $_POST['properf_push_to_bq'] ) && check_admin_referer( 'properf_push_action', 'properf_push_nonce' ) ) {
-			require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
+/**
+ * Handle BigQuery push on admin init.
+ */
+function properf_handle_bigquery_push() {
+	if ( isset( $_POST['properf_push_to_bq'] ) && check_admin_referer( 'properf_push_action', 'properf_push_nonce' ) ) {
+		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
 
-			$collector = new ProPerf_Data_Collector();
-			$bq_client = new ProPerf_BigQuery_Client();
+		$collector = new ProPerf_Data_Collector();
+		$bq_client = new ProPerf_BigQuery_Client();
 
-			if ( $bq_client->push_metrics( $collector->get_data() ) ) {
-				add_settings_error( 'properf_messages', 'properf_msg', 'Data successfully pushed to BigQuery!', 'updated' );
-			} else {
-				$error_message = $bq_client->get_last_error();
-				add_settings_error( 'properf_messages', 'properf_msg', 'Failed: ' . $error_message, 'error' );
-			}
+		if ( $bq_client->push_metrics( $collector->get_data() ) ) {
+			add_settings_error( 'properf_messages', 'properf_msg', 'Data successfully pushed to BigQuery!', 'updated' );
+		} else {
+			$error_message = $bq_client->get_last_error();
+			add_settings_error( 'properf_messages', 'properf_msg', 'Failed: ' . $error_message, 'error' );
 		}
 	}
-);
+}
+add_action( 'admin_init', 'properf_handle_bigquery_push' );
 
-add_action(
-	'wp',
-	function() {
-		if ( ! wp_next_scheduled( 'properf_collect_metrics' ) ) {
-			$time = properf_get_next_5pm();
-			wp_schedule_event( $time, 'daily', 'properf_collect_metrics' );
-		}
+/**
+ * Schedule metrics collection if not already scheduled.
+ */
+function properf_schedule_metrics_collection() {
+	if ( ! wp_next_scheduled( 'properf_collect_metrics' ) ) {
+		$time = properf_get_next_5pm();
+		wp_schedule_event( $time, 'daily', 'properf_collect_metrics' );
 	}
-);
+}
+add_action( 'wp', 'properf_schedule_metrics_collection' );
 
 /**
  * Get next 5pm timestamp in site timezone.
