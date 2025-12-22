@@ -30,7 +30,6 @@ yarn.lock
 
 # Build & Dependencies
 vendor/
-composer.lock
 build/
 dist/
 *.zip
@@ -52,4 +51,5 @@ logs/
 # PHP
 *.phps
 .php_cs.cache
+
 
