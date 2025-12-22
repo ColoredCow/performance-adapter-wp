@@ -6,26 +6,16 @@ if (! defined('ABSPATH')) {
 
 class CC_Adapter_Data_Collector
 {
-
-  /**
-   * Get all collected data, always calculating fresh data (no cache).
-   *
-   * @return array
-   */
   public function get_data()
   {
     return $this->collect_autoloaded_options();
   }
 
-  /**
-   * Collect autoloaded options metrics.
-   *
-   * @return array
-   */
   public function collect_autoloaded_options()
   {
     global $wpdb;
     $autoload_clause = "autoload IN ('yes', 'on', 'auto', 'auto-on')";
+
     $autoloaded_option_count = intval($wpdb->get_var(
       "SELECT COUNT(*) FROM {$wpdb->options} WHERE {$autoload_clause}"
     ));
@@ -34,6 +24,7 @@ class CC_Adapter_Data_Collector
       "SELECT SUM(OCTET_LENGTH(option_value)) FROM {$wpdb->options} WHERE {$autoload_clause}"
     );
     $autoloaded_option_size_bytes = $size_result ? intval($size_result) : 0;
+
     $top_options = $wpdb->get_results(
       "SELECT option_name, OCTET_LENGTH(option_value) as size 
              FROM {$wpdb->options} 
@@ -42,7 +33,6 @@ class CC_Adapter_Data_Collector
     );
 
     $autoloaded_option_top_keys = array();
-
     if ($top_options) {
       foreach ($top_options as $option) {
         $key = sanitize_key($option->option_name);
@@ -50,15 +40,35 @@ class CC_Adapter_Data_Collector
       }
     }
 
-    $data = array(
+    return array(
       'autoloaded_option' => array(
-        'count' => $autoloaded_option_count,
-        'size_bytes' => $autoloaded_option_size_bytes,
+        'count'         => $autoloaded_option_count,
+        'size_bytes'    => $autoloaded_option_size_bytes,
         'top_size_keys' => $autoloaded_option_top_keys,
       )
     );
-
-    return $data;
   }
 
+  public function format_for_bigquery($metrics)
+  {
+    $site_url = get_site_url();
+    $timestamp = gmdate('Y-m-d H:i:s');
+    $vertical_keys = "";
+    if (!empty($metrics['autoloaded_option']['top_size_keys'])) {
+      $i = 1;
+      foreach ($metrics['autoloaded_option']['top_size_keys'] as $key => $size) {
+        $vertical_keys .= "{$i}. {$key} (" . round($size / 1024, 2) . " KB)\n";
+        $i++;
+      }
+    }
+
+    return array(
+      'platform'          => 'WordPress',
+      'metric_key'        => trim($vertical_keys),
+      'metric_count'      => (string) $metrics['autoloaded_option']['count'],
+      'metric_total_size' => round($metrics['autoloaded_option']['size_bytes'] / 1024, 2) . " KB",
+      'site_url'          => $site_url,
+      'timestamp_utc'     => $timestamp,
+    );
+  }
 }
