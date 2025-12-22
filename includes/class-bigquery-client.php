@@ -188,7 +188,10 @@ class ProPerf_BigQuery_Client {
 	}
 
 	/**
-	 * Get config value from WordPress options, constants, environment variables, or $_ENV.
+	 * Get config value with fallback priority:
+	 * 1. WordPress options (from ProPerf > Settings page) - PRIMARY
+	 * 2. PHP constants (for advanced users defining in wp-config.php)
+	 * 3. System environment variables (for containerized deployments)
 	 *
 	 * @param string $key Config key.
 	 * @param mixed  $default Default value.
@@ -197,14 +200,14 @@ class ProPerf_BigQuery_Client {
 	private function get_config_value( $key, $default = null ) {
 		// Map environment variable keys to WordPress option names.
 		$option_map = array(
-			'BIGQUERY_PROJECT_ID'  => 'properf_bigquery_project_id',
-			'BIGQUERY_DATASET_ID'  => 'properf_bigquery_dataset_id',
-			'BIGQUERY_TABLE_ID'    => 'properf_bigquery_table_id',
+			'BIGQUERY_PROJECT_ID'   => 'properf_bigquery_project_id',
+			'BIGQUERY_DATASET_ID'   => 'properf_bigquery_dataset_id',
+			'BIGQUERY_TABLE_ID'     => 'properf_bigquery_table_id',
 			'BIGQUERY_CLIENT_EMAIL' => 'properf_bigquery_client_email',
 			'BIGQUERY_PRIVATE_KEY' => 'properf_bigquery_private_key',
 		);
 
-		// Check WordPress options first.
+		// Priority 1: Check WordPress options (from Settings page).
 		if ( isset( $option_map[ $key ] ) ) {
 			$option_value = get_option( $option_map[ $key ], '' );
 			if ( ! empty( $option_value ) ) {
@@ -212,17 +215,17 @@ class ProPerf_BigQuery_Client {
 			}
 		}
 
-		// Fall back to constants.
+		// Priority 2: Fall back to PHP constants (useful for wp-config.php).
 		if ( defined( $key ) ) {
 			return constant( $key );
 		}
 
-		// Fall back to environment variables.
+		// Priority 3: Fall back to system environment variables (for containers/servers).
 		if ( false !== getenv( $key ) ) {
 			return getenv( $key );
 		}
 
-		// Fall back to $_ENV.
+		// Priority 4: Fall back to $_ENV superglobal.
 		if ( isset( $_ENV[ $key ] ) ) {
 			return $_ENV[ $key ];
 		}

@@ -18,30 +18,6 @@ define( 'PROPERF_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PROPERF_URL', plugin_dir_url( __FILE__ ) );
 define( 'PROPERF_VERSION', '1.0.0' );
 
-/**
- * Load environment variables from .env file.
- */
-function properf_load_env() {
-  $env_file = ABSPATH . '.env';
-
-	if ( file_exists( $env_file ) ) {
-		$lines = file( $env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES );
-		foreach ( $lines as $line ) {
-			if ( 0 === strpos( trim( $line ), '#' ) ) {
-				continue;
-			}
-			if ( false !== strpos( $line, '=' ) ) {
-				list( $name, $value ) = explode( '=', $line, 2 );
-				$name  = trim( $name );
-				$value = trim( $value, " \t\n\r\0\x0B\"'" );
-				putenv( "{$name}={$value}" );
-				$_ENV[ $name ] = $value;
-			}
-		}
-	}
-}
-properf_load_env();
-
 require_once PROPERF_DIR . 'includes/class-data-collector.php';
 
 /**
