@@ -112,70 +112,28 @@ Before setting up this plugin on another machine, ensure you have:
 - Select the `proactive_perf` dataset
 - Click "Create Table"
 - **Table name**: `performance_metrics`
-- **Schema**: Create from JSON file or add fields manually:
+- **Schema**: Copy and paste the following JSON schema when creating the table:
 
 ```json
 [
   {
-    "name": "platform",
-    "type": "STRING",
+    "name": "timestamp_utc",
+    "type": "TIMESTAMP",
     "mode": "NULLABLE"
   },
   {
-    "name": "metric_type",
-    "type": "STRING",
-    "mode": "NULLABLE"
-  },
-  {
-    "name": "metric_key",
-    "type": "STRING",
-    "mode": "NULLABLE"
-  },
-  {
-    "name": "metric_value",
+    "name": "autoloaded_option_count",
     "type": "INTEGER",
     "mode": "NULLABLE"
   },
   {
-    "name": "context",
-    "type": "RECORD",
-    "mode": "NULLABLE",
-    "fields": [
-      {
-        "name": "autoloaded_option_count",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
-      },
-      {
-        "name": "autoloaded_option_size_bytes",
-        "type": "INTEGER",
-        "mode": "NULLABLE"
-      },
-      {
-        "name": "autoloaded_option_top_keys",
-        "type": "RECORD",
-        "mode": "REPEATED",
-        "fields": [
-          {
-            "name": "key",
-            "type": "STRING"
-          },
-          {
-            "name": "size",
-            "type": "INTEGER"
-          }
-        ]
-      },
-      {
-        "name": "site_identifier",
-        "type": "STRING",
-        "mode": "NULLABLE"
-      }
-    ]
+    "name": "autoloaded_option_size",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
   },
   {
-    "name": "timestamp_utc",
-    "type": "TIMESTAMP",
+    "name": "site_url",
+    "type": "STRING",
     "mode": "NULLABLE"
   }
 ]

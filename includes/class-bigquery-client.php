@@ -119,12 +119,6 @@ class ProPerf_BigQuery_Client {
 
 		$collector      = new ProPerf_Data_Collector();
 		$formatted_data = $collector->format_for_bigquery( $metrics );
-		if ( isset( $formatted_data['metric_count'] ) ) {
-			$formatted_data['metric_count'] = (string) $formatted_data['metric_count'];
-		}
-		if ( isset( $formatted_data['metric_total_size'] ) ) {
-			$formatted_data['metric_total_size'] = (string) $formatted_data['metric_total_size'];
-		}
 
 		try {
 			$dataset = $this->bigQuery->dataset( $this->dataset_id );
@@ -137,11 +131,9 @@ class ProPerf_BigQuery_Client {
 			rewind( $stream );
 			$schema = array(
 				'fields' => array(
-					array( 'name' => 'platform', 'type' => 'STRING' ),
-					array( 'name' => 'metric_key', 'type' => 'STRING' ),
 					array( 'name' => 'timestamp_utc', 'type' => 'TIMESTAMP' ),
-					array( 'name' => 'metric_count', 'type' => 'STRING' ),
-					array( 'name' => 'metric_total_size', 'type' => 'STRING' ),
+					array( 'name' => 'autoloaded_option_count', 'type' => 'INTEGER' ),
+					array( 'name' => 'autoloaded_option_size', 'type' => 'INTEGER' ),
 					array( 'name' => 'site_url', 'type' => 'STRING' ),
 				),
 			);

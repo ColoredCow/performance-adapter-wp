@@ -74,24 +74,14 @@ class ProPerf_Data_Collector {
 	 * @return array Formatted data for BigQuery.
 	 */
 	public function format_for_bigquery( $metrics ) {
-		$site_url     = get_site_url();
-		$timestamp    = gmdate( 'Y-m-d H:i:s' );
-		$vertical_keys = '';
-		if ( ! empty( $metrics['autoloaded_option']['top_size_keys'] ) ) {
-			$i = 1;
-			foreach ( $metrics['autoloaded_option']['top_size_keys'] as $key => $size ) {
-				$vertical_keys .= "{$i}. {$key} (" . round( $size / 1024, 2 ) . " KB)\n";
-				$i++;
-			}
-		}
+		$site_url = get_site_url();
+		$timestamp = gmdate( 'Y-m-d H:i:s' );
 
 		return array(
-			'platform'          => 'WordPress',
-			'metric_key'        => trim( $vertical_keys ),
-			'metric_count'      => (string) $metrics['autoloaded_option']['count'],
-			'metric_total_size' => round( $metrics['autoloaded_option']['size_bytes'] / 1024, 2 ) . ' KB',
-			'site_url'          => $site_url,
-			'timestamp_utc'     => $timestamp,
+			'timestamp_utc'          => $timestamp,
+			'autoloaded_option_count' => $metrics['autoloaded_option']['count'],
+			'autoloaded_option_size'  => $metrics['autoloaded_option']['size_bytes'],
+			'site_url'               => $site_url,
 		);
 	}
 }
