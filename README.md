@@ -185,7 +185,7 @@ $this->credentials = array(
 - Go to WordPress Admin → **Plugins**
 - Find "CC Performance Adapter"
 - Click **"Activate"**
-- You'll see a log message confirming the daily schedule at 5:00 PM IST
+- The plugin will automatically schedule daily metric collection at midnight (00:00:00) in your site's timezone
 
 ### 5. **Test the Setup**
 
@@ -212,13 +212,13 @@ You should see your WordPress metrics!
 ## Configuration Details
 
 ### Scheduled Collection
-- **Default Time**: 5:00 PM IST (Indian Standard Time)
+- **Default Time**: Midnight (00:00:00) in site's timezone
 - **Frequency**: Daily
 - **Location**: Managed by WordPress cron
 
-To change the collection time, edit `properf_get_next_5pm()` in `properf-wordpress-adapter.php`:
+To change the collection time, edit `properf_get_next_midnight()` in `properf-wordpress-adapter.php`:
 ```php
-$today_5pm = new DateTime('17:00:00', $ist_tz);  // Change 17:00 to your desired time
+$today_midnight = new DateTime('00:00:00', $target_tz);  // Change 00:00:00 to your desired time
 ```
 
 ### Metrics Collected

@@ -59,18 +59,36 @@ add_action( 'admin_init', 'properf_handle_bigquery_push' );
  */
 function properf_schedule_metrics_collection() {
 	if ( ! wp_next_scheduled( 'properf_collect_metrics' ) ) {
-		$time = properf_get_next_5pm();
+		$time = properf_get_next_midnight();
 		wp_schedule_event( $time, 'daily', 'properf_collect_metrics' );
 	}
 }
 add_action( 'wp', 'properf_schedule_metrics_collection' );
 
 /**
- * Get next 5pm timestamp in site timezone.
- *
- * @return int Timestamp for next 5pm.
+ * Handle scheduled metrics collection and push to BigQuery.
  */
-function properf_get_next_5pm() {
+function properf_collect_and_push_metrics() {
+	require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
+
+	$collector = new ProPerf_Data_Collector();
+	$bq_client = new ProPerf_BigQuery_Client();
+
+	if ( $bq_client->push_metrics( $collector->get_data() ) ) {
+		error_log( 'ProPerf: Metrics successfully pushed to BigQuery at ' . gmdate( 'Y-m-d H:i:s' ) );
+	} else {
+		$error_message = $bq_client->get_last_error();
+		error_log( 'ProPerf Error: Failed to push metrics to BigQuery - ' . $error_message );
+	}
+}
+add_action( 'properf_collect_metrics', 'properf_collect_and_push_metrics' );
+
+/**
+ * Get next midnight timestamp in site timezone.
+ *
+ * @return int Timestamp for next midnight (00:00:00).
+ */
+function properf_get_next_midnight() {
 	$tz = get_option( 'timezone_string' ) ?: 'UTC';
 
 	if ( empty( $tz ) ) {
@@ -81,14 +99,14 @@ function properf_get_next_5pm() {
 		}
 	}
 
-	$target_tz  = new DateTimeZone( $tz );
-	$now        = new DateTime( 'now', $target_tz );
-	$today_5pm  = new DateTime( '17:00:00', $target_tz );
+	$target_tz    = new DateTimeZone( $tz );
+	$now          = new DateTime( 'now', $target_tz );
+	$today_midnight = new DateTime( '00:00:00', $target_tz );
 
-	if ( $today_5pm <= $now ) {
-		$today_5pm->add( new DateInterval( 'P1D' ) );
+	if ( $today_midnight <= $now ) {
+		$today_midnight->add( new DateInterval( 'P1D' ) );
   }
-  return $today_5pm->getTimestamp();
+  return $today_midnight->getTimestamp();
 }
 
 /**
