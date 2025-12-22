@@ -188,19 +188,45 @@ class ProPerf_BigQuery_Client {
 	}
 
 	/**
-	 * Get config value from constants, environment variables, or $_ENV.
+	 * Get config value from WordPress options, constants, environment variables, or $_ENV.
 	 *
 	 * @param string $key Config key.
 	 * @param mixed  $default Default value.
 	 * @return mixed Config value.
 	 */
 	private function get_config_value( $key, $default = null ) {
+		// Map environment variable keys to WordPress option names.
+		$option_map = array(
+			'BIGQUERY_PROJECT_ID'  => 'properf_bigquery_project_id',
+			'BIGQUERY_DATASET_ID'  => 'properf_bigquery_dataset_id',
+			'BIGQUERY_TABLE_ID'    => 'properf_bigquery_table_id',
+			'BIGQUERY_CLIENT_EMAIL' => 'properf_bigquery_client_email',
+			'BIGQUERY_PRIVATE_KEY' => 'properf_bigquery_private_key',
+		);
+
+		// Check WordPress options first.
+		if ( isset( $option_map[ $key ] ) ) {
+			$option_value = get_option( $option_map[ $key ], '' );
+			if ( ! empty( $option_value ) ) {
+				return $option_value;
+			}
+		}
+
+		// Fall back to constants.
 		if ( defined( $key ) ) {
 			return constant( $key );
 		}
+
+		// Fall back to environment variables.
 		if ( false !== getenv( $key ) ) {
 			return getenv( $key );
 		}
-		return isset( $_ENV[ $key ] ) ? $_ENV[ $key ] : $default;
+
+		// Fall back to $_ENV.
+		if ( isset( $_ENV[ $key ] ) ) {
+			return $_ENV[ $key ];
+		}
+
+		return $default;
 	}
 }

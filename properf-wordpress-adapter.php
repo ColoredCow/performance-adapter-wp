@@ -49,6 +49,7 @@ require_once PROPERF_DIR . 'includes/class-data-collector.php';
  */
 function properf_init() {
 	add_action( 'admin_menu', 'properf_add_admin_menu' );
+	add_action( 'admin_init', 'properf_register_settings', 20 );
 }
 add_action( 'plugins_loaded', 'properf_init' );
 
@@ -68,6 +69,11 @@ function properf_handle_bigquery_push() {
 			$error_message = $bq_client->get_last_error();
 			add_settings_error( 'properf_messages', 'properf_msg', 'Failed: ' . $error_message, 'error' );
 		}
+	}
+
+	// Show success message when settings are saved.
+	if ( isset( $_GET['settings-updated'] ) && isset( $_GET['page'] ) && 'properf-settings' === $_GET['page'] ) {
+		add_settings_error( 'properf_messages', 'properf_settings_saved', __( 'Settings saved successfully.', 'properf' ), 'updated' );
 	}
 }
 add_action( 'admin_init', 'properf_handle_bigquery_push' );
@@ -110,23 +116,45 @@ function properf_get_next_5pm() {
 }
 
 /**
- * Add admin menu item.
+ * Add admin menu items.
  */
 function properf_add_admin_menu() {
-	add_submenu_page(
-		'tools.php',
-		'ProPerf',
+	// Add top-level menu.
+	add_menu_page(
+		__( 'ProPerf Dashboard', 'properf' ),
 		'ProPerf',
 		'manage_options',
 		'properf',
-		'properf_render_page'
+		'properf_render_dashboard',
+		'dashicons-chart-line',
+		30
+	);
+
+	// Add Dashboard submenu (first submenu item replaces the parent menu title).
+	add_submenu_page(
+		'properf',
+		__( 'ProPerf Dashboard', 'properf' ),
+		__( 'Dashboard', 'properf' ),
+		'manage_options',
+		'properf',
+		'properf_render_dashboard'
+	);
+
+	// Add Settings submenu.
+	add_submenu_page(
+		'properf',
+		__( 'ProPerf Settings', 'properf' ),
+		__( 'Settings', 'properf' ),
+		'manage_options',
+		'properf-settings',
+		'properf_render_settings'
 	);
 }
 
 /**
- * Render admin page.
+ * Render Dashboard page.
  */
-function properf_render_page() {
+function properf_render_dashboard() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( 'Unauthorized' );
 	}
@@ -221,6 +249,269 @@ function properf_render_page() {
 	</div>
 	<?php
 }
+
+/**
+ * Register plugin settings.
+ */
+function properf_register_settings() {
+	register_setting(
+		'properf_bigquery_settings',
+		'properf_bigquery_project_id',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'default'           => '',
+		)
+	);
+
+	register_setting(
+		'properf_bigquery_settings',
+		'properf_bigquery_dataset_id',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'default'           => '',
+		)
+	);
+
+	register_setting(
+		'properf_bigquery_settings',
+		'properf_bigquery_table_id',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'default'           => '',
+		)
+	);
+
+	register_setting(
+		'properf_bigquery_settings',
+		'properf_bigquery_client_email',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_email',
+			'default'           => '',
+		)
+	);
+
+	register_setting(
+		'properf_bigquery_settings',
+		'properf_bigquery_private_key',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'properf_sanitize_private_key',
+			'default'           => '',
+		)
+	);
+
+	add_settings_section(
+		'properf_bigquery_section',
+		__( 'BigQuery Configuration', 'properf' ),
+		'properf_bigquery_section_callback',
+		'properf-settings'
+	);
+
+	add_settings_field(
+		'properf_bigquery_project_id',
+		__( 'Project ID', 'properf' ),
+		'properf_bigquery_project_id_field',
+		'properf-settings',
+		'properf_bigquery_section'
+	);
+
+	add_settings_field(
+		'properf_bigquery_dataset_id',
+		__( 'Dataset ID', 'properf' ),
+		'properf_bigquery_dataset_id_field',
+		'properf-settings',
+		'properf_bigquery_section'
+	);
+
+	add_settings_field(
+		'properf_bigquery_table_id',
+		__( 'Table ID', 'properf' ),
+		'properf_bigquery_table_id_field',
+		'properf-settings',
+		'properf_bigquery_section'
+	);
+
+	add_settings_field(
+		'properf_bigquery_client_email',
+		__( 'Client Email', 'properf' ),
+		'properf_bigquery_client_email_field',
+		'properf-settings',
+		'properf_bigquery_section'
+	);
+
+	add_settings_field(
+		'properf_bigquery_private_key',
+		__( 'Private Key', 'properf' ),
+		'properf_bigquery_private_key_field',
+		'properf-settings',
+		'properf_bigquery_section'
+	);
+}
+
+/**
+ * Sanitize private key field.
+ *
+ * @param string $value Private key value.
+ * @return string Sanitized private key.
+ */
+function properf_sanitize_private_key( $value ) {
+	// Remove any potential malicious content but preserve the key structure.
+	return wp_strip_all_tags( $value );
+}
+
+/**
+ * BigQuery section callback.
+ */
+function properf_bigquery_section_callback() {
+	echo '<p>' . esc_html__( 'Configure your Google Cloud BigQuery credentials. These settings are required for pushing metrics to BigQuery.', 'properf' ) . '</p>';
+}
+
+/**
+ * Project ID field.
+ */
+function properf_bigquery_project_id_field() {
+	$value = get_option( 'properf_bigquery_project_id', '' );
+	?>
+	<input type="text" name="properf_bigquery_project_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+	<p class="description"><?php esc_html_e( 'Your Google Cloud Project ID.', 'properf' ); ?></p>
+	<?php
+}
+
+/**
+ * Dataset ID field.
+ */
+function properf_bigquery_dataset_id_field() {
+	$value = get_option( 'properf_bigquery_dataset_id', '' );
+	?>
+	<input type="text" name="properf_bigquery_dataset_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+	<p class="description"><?php esc_html_e( 'The BigQuery dataset ID where metrics will be stored.', 'properf' ); ?></p>
+	<?php
+}
+
+/**
+ * Table ID field.
+ */
+function properf_bigquery_table_id_field() {
+	$value = get_option( 'properf_bigquery_table_id', '' );
+	?>
+	<input type="text" name="properf_bigquery_table_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+	<p class="description"><?php esc_html_e( 'The BigQuery table ID where metrics will be stored.', 'properf' ); ?></p>
+	<?php
+}
+
+/**
+ * Client Email field.
+ */
+function properf_bigquery_client_email_field() {
+	$value = get_option( 'properf_bigquery_client_email', '' );
+	?>
+	<input type="email" name="properf_bigquery_client_email" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+	<p class="description"><?php esc_html_e( 'The service account email address from your Google Cloud service account JSON key.', 'properf' ); ?></p>
+	<?php
+}
+
+/**
+ * Private Key field.
+ */
+function properf_bigquery_private_key_field() {
+	$value = get_option( 'properf_bigquery_private_key', '' );
+	?>
+	<textarea name="properf_bigquery_private_key" rows="5" class="large-text code"><?php echo esc_textarea( $value ); ?></textarea>
+	<p class="description"><?php esc_html_e( 'The private key from your Google Cloud service account JSON key file. Include the full key including BEGIN and END markers.', 'properf' ); ?></p>
+	<?php
+}
+
+/**
+ * Render Settings page.
+ */
+function properf_render_settings() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( 'Unauthorized' );
+	}
+
+	// Ensure settings are registered.
+	global $wp_settings_sections;
+	if ( ! isset( $wp_settings_sections['properf-settings'] ) ) {
+		properf_register_settings();
+	}
+	?>
+	<div class="wrap">
+		<h1><?php esc_html_e( 'ProPerf Settings', 'properf' ); ?></h1>
+		<?php settings_errors( 'properf_messages' ); ?>
+		<form method="post" action="options.php">
+			<?php
+			settings_fields( 'properf_bigquery_settings' );
+			?>
+			<?php properf_bigquery_section_callback(); ?>
+			<table class="form-table" role="presentation">
+				<tbody>
+					<tr>
+						<th scope="row">
+							<label for="properf_bigquery_project_id"><?php esc_html_e( 'Project ID', 'properf' ); ?></label>
+						</th>
+						<td>
+							<?php properf_bigquery_project_id_field(); ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="properf_bigquery_dataset_id"><?php esc_html_e( 'Dataset ID', 'properf' ); ?></label>
+						</th>
+						<td>
+							<?php properf_bigquery_dataset_id_field(); ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="properf_bigquery_table_id"><?php esc_html_e( 'Table ID', 'properf' ); ?></label>
+						</th>
+						<td>
+							<?php properf_bigquery_table_id_field(); ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="properf_bigquery_client_email"><?php esc_html_e( 'Client Email', 'properf' ); ?></label>
+						</th>
+						<td>
+							<?php properf_bigquery_client_email_field(); ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="properf_bigquery_private_key"><?php esc_html_e( 'Private Key', 'properf' ); ?></label>
+						</th>
+						<td>
+							<?php properf_bigquery_private_key_field(); ?>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<?php
+			submit_button( __( 'Save Settings', 'properf' ) );
+			?>
+		</form>
+	</div>
+	<?php
+}
+
+/**
+ * Add page parameter to settings form redirect.
+ *
+ * @param string $location Redirect location.
+ * @return string Modified redirect location.
+ */
+function properf_settings_redirect( $location ) {
+	if ( isset( $_POST['option_page'] ) && 'properf_bigquery_settings' === $_POST['option_page'] ) {
+		$location = add_query_arg( 'page', 'properf-settings', $location );
+	}
+	return $location;
+}
+add_filter( 'wp_redirect', 'properf_settings_redirect' );
 
 /**
  * Get live data from collector.
