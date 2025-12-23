@@ -77,14 +77,15 @@ Before setting up this plugin on another machine, ensure you have:
 - Note your Project ID
 
 #### 1.2 Enable BigQuery API
-- In Cloud Console, search for "BigQuery API"
+- Click on the project recently created, click on the hamburger icon on the left to open the menu items.
+- In the menu items, search for "BigQuery API"
 - Click "Enable" to activate it
 
 #### 1.3 Create a Service Account
-- Go to "IAM & Admin" → "Service Accounts"
+- In the menu items, Go to "IAM & Admin" → "Service Accounts"
 - Click "Create Service Account"
 - Fill in details:
-  - **Service Account Name**: `wordpress-adapter`
+  - **Service Account Name**: <`your-wordpress-adapter-name`> (can be anything)
   - **Description**: WordPress Performance Metrics
 - Click "Create and Continue"
 
@@ -103,15 +104,15 @@ Before setting up this plugin on another machine, ensure you have:
 ### 2. **Set Up BigQuery Dataset and Table**
 
 #### 2.1 Create Dataset
-- Go to BigQuery console
+- Go to BigQuery console, click on three dots will see next to the project name.
 - Click "Create Dataset"
-- **Dataset ID**: `proactive_perf`
+- **Dataset ID**: <`dataset-name`> (can be anything)
 - Keep other defaults, click "Create dataset"
 
 #### 2.2 Create Table
-- Select the `proactive_perf` dataset
+- Select the <`dataset-name`> dataset
 - Click "Create Table"
-- **Table name**: `performance_metrics`
+- **Table name**: <`table-name`> (can be anything)
 - **Schema**: Create from JSON file or add fields manually:
 
 ```json
@@ -184,90 +185,58 @@ Before setting up this plugin on another machine, ensure you have:
 ### 3. **Install Plugin on New Machine**
 
 #### 3.1 Upload Plugin Files
-- Copy the code from the same repo to your local machine.
+- Copy the code from the same repo to your local machine using:
+  ```bash
+   git clone https://github.com/ColoredCow/performance-adapter-wp
+   ```
+- Create a zip file of that folder.  
 
-#### 3.2 Add Google Service Account Key
-- Rename your downloaded JSON key file to match the pattern for BigQuery.
-REPLACE 'YOUR_SERVICE_ACCOUNT_KEY.json' with the actual file name ***
-  - Example: `wordpress-adapter-1a2b3c4d5e6f.json`
-- Place it in the **WordPress root directory** (same level as `wp-config.php`)
-- **Important**: Add this filename to `.gitignore`
+#### 3.2 Add the Plugin
+- Go to WordPress Admin → **Plugins**
+- Upload the zip file after clicking **Add PLugin** button
 
-#### 3.3 Update Plugin Configuration
-Edit `wp-content/plugins/properf/includes/class-bigquery-client.php`:
-
-Find the `__construct()` method and update:
-
-```php
-private $project_id = 'YOUR_PROJECT_ID';           // Replace with your actual GCP Project ID
-private $dataset_id = 'proactive_perf';             // Keep unless you renamed it
-private $table_id = 'performance_metrics';          // Keep unless you renamed it
-```
-
-And update the credentials array:
-
-```php
-$this->credentials = array(
-  'type'                => 'service_account',
-  'project_id'          => 'YOUR_PROJECT_ID',
-  'private_key_id'      => 'YOUR_PRIVATE_KEY_ID',
-  'private_key'         => "YOUR_PRIVATE_KEY",
-  'client_email'        => 'YOUR_SERVICE_ACCOUNT_EMAIL',
-  'client_id'           => 'YOUR_CLIENT_ID',
-  'auth_uri'            => 'https://accounts.google.com/o/oauth2/auth',
-  'token_uri'           => 'https://oauth2.googleapis.com/token',
-  'auth_provider_x509_cert_url' => 'https://www.googleapis.com/oauth2/v1/certs',
-);
-```
-
-**Get these values from your downloaded JSON key file.**
 
 ### 4. **Activate Plugin**
 
 - Go to WordPress Admin → **Plugins**
-- Find "CC Performance Adapter"
+- Find "ProPerf WordPress Adapter"
 - Click **"Activate"**
-- You'll see a log message confirming the daily schedule at 5:00 PM IST
+- After activating the plugin you will see **"ProPerf"** in the menu items on the left.
 
-### 5. **Test the Setup**
 
-#### 5.1 Via WordPress Admin
-- Go to **Tools** → **Costwatch**
-- Click "Collect & Push Now" button
-- You should see: "Data collected and pushed to BigQuery!"
+### 5. **Send Data to Bigquery**
+- You will see two Options under **"ProPerf"** named `Dashboard & Settings`
+- Fill the configurations of bigquery, in `Settings` options under **"ProPerf"**
+- Now go to `Dashboard` options under **"ProPerf"**
+- Click the button **"Push to BigQuery"**
+- You will see `Data successfully pushed to BigQuery!`.
 
-#### 5.2 Via WP-CLI (if available)
-```bash
-wp cc-perf collect
-```
 
-#### 5.3 Verify in BigQuery
+#### 6. Verify in BigQuery
 - Go to BigQuery Console
-- Query your table:
+- Click Preview Button or Query your table using command:
 ```sql
-SELECT * FROM `YOUR_PROJECT_ID.proactive_perf.performance_metrics`
-LIMIT 10;
+SELECT * FROM `YOUR_TABLE_NAME`
+LIMIT 100;
 ```
 
 You should see your WordPress metrics!
 
+
 ## Configuration Details
 
 ### Scheduled Collection
-- **Default Time**: 5:00 PM IST (Indian Standard Time)
+- **Default Time**: Midnight of the selected timezone
 - **Frequency**: Daily
 - **Location**: Managed by WordPress cron
 
-To change the collection time, edit `properf_get_next_5pm()` in `properf-wordpress-adapter.php`:
-```php
-$today_5pm = new DateTime('17:00:00', $ist_tz);  // Change 17:00 to your desired time
-```
 
 ### Metrics Collected
 - **Autoloaded Options Count**: Number of database options set to autoload
 - **Autoloaded Options Size**: Total bytes of autoloaded data
 - **Top 5 Options**: The 5 largest autoloaded options by size
 - **Timestamp**: UTC timestamp of collection
+
 
 ## Troubleshooting
 
@@ -294,6 +263,7 @@ $today_5pm = new DateTime('17:00:00', $ist_tz);  // Change 17:00 to your desired
 - Ensure the private key string includes proper newline characters: `\n`
 - The key should start with `-----BEGIN PRIVATE KEY-----` and end with `-----END PRIVATE KEY-----`
 
+
 ## File Structure
 
 ```
@@ -305,6 +275,7 @@ wp-content/plugins/properf/
 └── README.md                       # This file
 ```
 
+
 ## Connecting to LookerStudio (Optional)
 
 Once data is flowing to BigQuery, you can visualize it in LookerStudio:
@@ -315,6 +286,7 @@ Once data is flowing to BigQuery, you can visualize it in LookerStudio:
 4. Select your project and table
 5. Create visualizations from your performance metrics
 
+
 ## Plugin Features
 
 ✅ **Automatic Daily Collection** - Runs at scheduled time
@@ -324,9 +296,11 @@ Once data is flowing to BigQuery, you can visualize it in LookerStudio:
 ✅ **Error Logging** - All errors logged to WordPress error log
 ✅ **Token Caching** - Optimized BigQuery API token management
 
+
 ## Security Notes
 
 ⚠️ **CRITICAL**: 
+
 - Never commit service account keys to version control
 - Add service account filename to `.gitignore`
 - Use environment variables for sensitive data in production
@@ -343,27 +317,35 @@ For issues or questions:
    ```
 3. Check BigQuery logs for API errors
 
+
 ## Version
+
 - **Current Version**: 1.0.0
 - **Requires**: WordPress 5.0+, PHP 7.4+
 - **License**: GPL v2 or later
 =======
+
+
 # Performance Adapter for WordPress
 
 A WordPress plugin that collects important WordPress metrics and sends them to a data warehouse.
+
 
 ## Description
 
 Performance Adapter for WordPress is designed to gather key performance and operational metrics from WordPress sites and transmit them to a centralized data warehouse. This plugin is part of the ColoredCow Proactive Performance tool ecosystem.
 
+
 ## Author
 
 ColoredCow
+
 
 ## Installation
 
 1. Upload the plugin files to the `/wp-content/plugins/performance-adapter-wp` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
+
 
 ## Requirements
 
