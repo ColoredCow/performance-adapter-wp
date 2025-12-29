@@ -3,7 +3,7 @@
  * Plugin Name: ProPerf WordPress Adapter
  * Plugin URI: https://coloredcow.com
  * Description: Collects and displays database health metrics (autoloaded options)
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: ColoredCow
  * License: GPL v2 or later
  *
@@ -19,6 +19,25 @@ define( 'PROPERF_URL', plugin_dir_url( __FILE__ ) );
 define( 'PROPERF_VERSION', '1.0.0' );
 
 require_once PROPERF_DIR . 'includes/class-data-collector.php';
+
+/**
+ * Plugin activation: ensure cron is scheduled.
+ */
+function properf_activate_plugin() {
+	properf_schedule_metrics_collection();
+}
+register_activation_hook( __FILE__, 'properf_activate_plugin' );
+
+/**
+ * Plugin deactivation: clean up cron.
+ */
+function properf_deactivate_plugin() {
+	$timestamp = wp_next_scheduled( 'properf_collect_metrics' );
+	if ( $timestamp ) {
+		wp_unschedule_event( $timestamp, 'properf_collect_metrics' );
+	}
+}
+register_deactivation_hook( __FILE__, 'properf_deactivate_plugin' );
 
 /**
  * Initialize plugin.
@@ -39,26 +58,55 @@ function properf_handle_bigquery_push() {
 		$collector = new ProPerf_Data_Collector();
 		$bq_client = new ProPerf_BigQuery_Client();
 
-		if ( $bq_client->push_metrics( $collector->get_data() ) ) {
-			add_settings_error( 'properf_messages', 'properf_msg', 'Data successfully pushed to BigQuery!', 'updated' );
-    } else {
-      $error_message = $bq_client->get_last_error();
-			add_settings_error( 'properf_messages', 'properf_msg', 'Failed: ' . $error_message, 'error' );
+		$success = $bq_client->push_metrics( $collector->get_data() );
+
+		// Persist execution info (shared with cron)
+		update_option( 'properf_bq_last_sync', time(), false );
+		update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
+
+		if ( $success ) {
+			delete_option( 'properf_bq_last_sync_error' );
+			add_settings_error(
+				'properf_messages',
+				'properf_msg',
+				'Data successfully pushed to BigQuery!',
+				'updated'
+			);
+		} else {
+			$error_message = $bq_client->get_last_error();
+			update_option( 'properf_bq_last_sync_error', $error_message, false );
+
+			add_settings_error(
+				'properf_messages',
+				'properf_msg',
+				'Failed: ' . $error_message,
+				'error'
+			);
 		}
 	}
 
 	// Show success message when settings are saved.
-	if ( isset( $_GET['settings-updated'] ) && isset( $_GET['page'] ) && 'properf-settings' === $_GET['page'] ) {
-		add_settings_error( 'properf_messages', 'properf_settings_saved', __( 'Settings saved successfully.', 'properf' ), 'updated' );
+	if (
+		isset( $_GET['settings-updated'] ) &&
+		isset( $_GET['page'] ) &&
+		'properf-settings' === $_GET['page']
+	) {
+		add_settings_error(
+			'properf_messages',
+			'properf_settings_saved',
+			__( 'Settings saved successfully.', 'properf' ),
+			'updated'
+		);
 	}
 }
 add_action( 'admin_init', 'properf_handle_bigquery_push' );
+
 
 /**
  * Schedule metrics collection if not already scheduled.
  */
 function properf_schedule_metrics_collection() {
-	if ( ! wp_next_scheduled( 'properf_collect_metrics' ) ) {
+	if ( false === wp_next_scheduled( 'properf_collect_metrics' ) ) {
 		$time = properf_get_next_midnight();
 		wp_schedule_event( $time, 'daily', 'properf_collect_metrics' );
 	}
@@ -74,11 +122,24 @@ function properf_collect_and_push_metrics() {
 	$collector = new ProPerf_Data_Collector();
 	$bq_client = new ProPerf_BigQuery_Client();
 
-	if ( $bq_client->push_metrics( $collector->get_data() ) ) {
-		error_log( 'ProPerf: Metrics successfully pushed to BigQuery at ' . gmdate( 'Y-m-d H:i:s' ) );
+	$success = $bq_client->push_metrics( $collector->get_data() );
+
+	// Persist cron execution info
+	update_option( 'properf_bq_last_sync', time(), false );
+	update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
+
+	if ( $success ) {
+		delete_option( 'properf_bq_last_sync_error' );
+		error_log(
+			'ProPerf: Metrics successfully pushed to BigQuery at ' . gmdate( 'Y-m-d H:i:s' )
+		);
 	} else {
 		$error_message = $bq_client->get_last_error();
-		error_log( 'ProPerf Error: Failed to push metrics to BigQuery - ' . $error_message );
+		update_option( 'properf_bq_last_sync_error', $error_message, false );
+
+		error_log(
+			'ProPerf Error: Failed to push metrics to BigQuery - ' . $error_message
+		);
 	}
 }
 add_action( 'properf_collect_metrics', 'properf_collect_and_push_metrics' );
