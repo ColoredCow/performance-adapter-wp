@@ -20,7 +20,12 @@ class ProPerf_Data_Collector {
 	 * @return array Collected metrics.
 	 */
 	public function get_data() {
-		return $this->collect_autoloaded_options();
+		return array_merge(
+			$this->collect_autoloaded_options(),
+			$this->collect_plugin_metrics(),
+			$this->collect_hook_metrics(),
+			$this->collect_db_table_metrics()
+		);
 	}
 
 	/**
@@ -68,20 +73,118 @@ class ProPerf_Data_Collector {
 	}
 
 	/**
+	 * Collect plugin metrics.
+	 *
+	 * Counts active and inactive plugins. Business value: every inactive plugin
+	 * is dead code loading on every request — costing page load time and conversions.
+	 *
+	 * @return array Plugin metrics.
+	 */
+	public function collect_plugin_metrics() {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$all_plugins    = get_plugins();
+		$active_plugins = get_option( 'active_plugins', array() );
+		$active_count   = count( $active_plugins );
+		$total_count    = count( $all_plugins );
+		$inactive_count = $total_count - $active_count;
+
+		return array(
+			'plugins' => array(
+				'active_count'   => $active_count,
+				'inactive_count' => $inactive_count,
+				'total_count'    => $total_count,
+			),
+		);
+	}
+
+	/**
+	 * Collect hook metrics.
+	 *
+	 * Counts registered hooks via $wp_filter. Business value: hook count is a
+	 * direct indicator of plugin sprawl and backend execution complexity — MFM
+	 * had 344,000 hooks/page, translating directly to slow checkout.
+	 *
+	 * @return array Hook metrics.
+	 */
+	public function collect_hook_metrics() {
+		global $wp_filter;
+		$hook_count = is_array( $wp_filter ) ? count( $wp_filter ) : 0;
+
+		return array(
+			'hooks' => array(
+				'registered_count' => $hook_count,
+			),
+		);
+	}
+
+	/**
+	 * Collect database table size metrics.
+	 *
+	 * Reports total DB size and top 10 tables by size. Business value: a bloated
+	 * database means slower queries, slower order processing, and higher hosting
+	 * costs — surfacing which tables are growing enables targeted cleanup before
+	 * the client notices slowness.
+	 *
+	 * @return array Database size metrics.
+	 */
+	public function collect_db_table_metrics() {
+		global $wpdb;
+
+		$total_size = $wpdb->get_var(
+			'SELECT SUM(data_length + index_length)
+			 FROM information_schema.tables
+			 WHERE table_schema = DATABASE()'
+		);
+
+		$top_tables = $wpdb->get_results(
+			'SELECT table_name, ROUND(data_length + index_length) AS size_bytes
+			 FROM information_schema.tables
+			 WHERE table_schema = DATABASE()
+			 ORDER BY size_bytes DESC LIMIT 10'
+		);
+
+		$top_tables_map = array();
+		if ( $top_tables ) {
+			foreach ( $top_tables as $table ) {
+				$top_tables_map[ $table->table_name ] = intval( $table->size_bytes );
+			}
+		}
+
+		return array(
+			'database' => array(
+				'total_size_bytes' => $total_size ? intval( $total_size ) : 0,
+				'top_tables'       => $top_tables_map,
+			),
+		);
+	}
+
+	/**
 	 * Format metrics for BigQuery.
 	 *
 	 * @param array $metrics Metrics data.
 	 * @return array Formatted data for BigQuery.
 	 */
 	public function format_for_bigquery( $metrics ) {
-		$site_url = get_site_url();
+		$site_url  = get_site_url();
 		$timestamp = gmdate( 'Y-m-d H:i:s' );
 
 		return array(
-			'timestamp_utc'          => $timestamp,
+			'timestamp_utc'           => $timestamp,
+			'site_url'                => $site_url,
+			// Autoload.
 			'autoloaded_option_count' => $metrics['autoloaded_option']['count'],
 			'autoloaded_option_size'  => $metrics['autoloaded_option']['size_bytes'],
-			'site_url'               => $site_url,
+			// Plugins.
+			'active_plugin_count'     => $metrics['plugins']['active_count'],
+			'inactive_plugin_count'   => $metrics['plugins']['inactive_count'],
+			'total_plugin_count'      => $metrics['plugins']['total_count'],
+			// Hooks.
+			'hook_count'              => $metrics['hooks']['registered_count'],
+			// Database.
+			'db_total_size_bytes'     => $metrics['database']['total_size_bytes'],
 		);
 	}
 }

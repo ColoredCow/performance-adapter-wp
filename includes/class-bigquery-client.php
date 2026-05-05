@@ -131,10 +131,19 @@ class ProPerf_BigQuery_Client {
 			rewind( $stream );
 			$schema = array(
 				'fields' => array(
-					array( 'name' => 'timestamp_utc', 'type' => 'TIMESTAMP' ),
+					array( 'name' => 'timestamp_utc',           'type' => 'TIMESTAMP' ),
+					array( 'name' => 'site_url',                'type' => 'STRING' ),
+					// Autoload.
 					array( 'name' => 'autoloaded_option_count', 'type' => 'INTEGER' ),
-					array( 'name' => 'autoloaded_option_size', 'type' => 'INTEGER' ),
-					array( 'name' => 'site_url', 'type' => 'STRING' ),
+					array( 'name' => 'autoloaded_option_size',  'type' => 'INTEGER' ),
+					// Plugins.
+					array( 'name' => 'active_plugin_count',     'type' => 'INTEGER' ),
+					array( 'name' => 'inactive_plugin_count',   'type' => 'INTEGER' ),
+					array( 'name' => 'total_plugin_count',      'type' => 'INTEGER' ),
+					// Hooks.
+					array( 'name' => 'hook_count',              'type' => 'INTEGER' ),
+					// Database.
+					array( 'name' => 'db_total_size_bytes',     'type' => 'INTEGER' ),
 				),
 			);
 

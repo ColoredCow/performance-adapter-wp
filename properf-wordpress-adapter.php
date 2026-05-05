@@ -215,8 +215,11 @@ function properf_render_dashboard() {
 		wp_die( 'Unauthorized' );
 	}
 
-	$metrics                = properf_get_live_data();
+	$metrics                 = properf_get_live_data();
 	$autoloaded_data_metrics = $metrics['autoloaded_option'];
+	$plugin_metrics          = $metrics['plugins'];
+	$hook_metrics            = $metrics['hooks'];
+	$db_metrics              = $metrics['database'];
 
 	$count         = $autoloaded_data_metrics['count'];
 	$size_bytes    = $autoloaded_data_metrics['size_bytes'];
@@ -267,16 +270,39 @@ function properf_render_dashboard() {
 				<tr>
 					<th><?php esc_html_e( 'Metric', 'properf' ); ?></th>
 					<th><?php esc_html_e( 'Value', 'properf' ); ?></th>
+					<th><?php esc_html_e( 'Target', 'properf' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
 					<td><strong><?php esc_html_e( 'Autoloaded Option Count', 'properf' ); ?></strong></td>
 					<td><?php echo esc_html( number_format( $count ) ); ?></td>
+					<td>—</td>
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Autoloaded Option Size', 'properf' ); ?></strong></td>
 					<td><?php printf( '%.2f KB', $size_bytes / 1024 ); ?></td>
+					<td>&lt; 500 KB</td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Active Plugins', 'properf' ); ?></strong></td>
+					<td><?php echo esc_html( number_format( $plugin_metrics['active_count'] ) ); ?></td>
+					<td>&lt; 15</td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Inactive Plugins', 'properf' ); ?></strong></td>
+					<td><?php echo esc_html( number_format( $plugin_metrics['inactive_count'] ) ); ?></td>
+					<td>0</td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Registered Hooks', 'properf' ); ?></strong></td>
+					<td><?php echo esc_html( number_format( $hook_metrics['registered_count'] ) ); ?></td>
+					<td>&lt; 50,000</td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Total Database Size', 'properf' ); ?></strong></td>
+					<td><?php printf( '%.2f MB', $db_metrics['total_size_bytes'] / 1024 / 1024 ); ?></td>
+					<td>&lt; 10 GB</td>
 				</tr>
 			</tbody>
 		</table>
@@ -301,6 +327,28 @@ function properf_render_dashboard() {
 			</table>
 		<?php else : ?>
 			<p><?php esc_html_e( 'No autoloaded option keys found or an error occurred.', 'properf' ); ?></p>
+		<?php endif; ?>
+
+		<h2 style="margin-top: 30px;"><?php esc_html_e( 'Top 10 Database Tables by Size', 'properf' ); ?></h2>
+		<?php if ( ! empty( $db_metrics['top_tables'] ) ) : ?>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th><strong><?php esc_html_e( 'Table Name', 'properf' ); ?></strong></th>
+						<th><strong><?php esc_html_e( 'Size', 'properf' ); ?></strong></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $db_metrics['top_tables'] as $table_name => $table_size ) : ?>
+						<tr>
+							<td><?php echo esc_html( $table_name ); ?></td>
+							<td><?php printf( '%.2f MB', $table_size / 1024 / 1024 ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php else : ?>
+			<p><?php esc_html_e( 'No database table data found or an error occurred.', 'properf' ); ?></p>
 		<?php endif; ?>
 	</div>
 <?php
@@ -575,14 +623,28 @@ add_filter( 'wp_redirect', 'properf_settings_redirect' );
  * @return array Metrics data.
  */
 function properf_get_live_data() {
+	$empty_response = array(
+		'autoloaded_option' => array(
+			'count'         => 0,
+			'size_bytes'    => 0,
+			'top_size_keys' => array(),
+		),
+		'plugins'           => array(
+			'active_count'   => 0,
+			'inactive_count' => 0,
+			'total_count'    => 0,
+		),
+		'hooks'             => array(
+			'registered_count' => 0,
+		),
+		'database'          => array(
+			'total_size_bytes' => 0,
+			'top_tables'       => array(),
+		),
+	);
+
 	if ( ! class_exists( 'ProPerf_Data_Collector' ) ) {
-		return array(
-			'autoloaded_option' => array(
-				'count'         => 'Error: Collector Class Missing',
-				'size_bytes'    => 0,
-				'top_size_keys' => array(),
-			),
-		);
+		return $empty_response;
 	}
 
 	try {
@@ -590,12 +652,6 @@ function properf_get_live_data() {
 		return $collector->get_data();
 	} catch ( Exception $e ) {
 		error_log( 'ProPerf Error: ' . $e->getMessage() );
-		return array(
-			'autoloaded_option' => array(
-				'count'         => 'Error: ' . $e->getMessage(),
-				'size_bytes'    => 0,
-				'top_size_keys' => array(),
-			),
-		);
+		return $empty_response;
 	}
 }
