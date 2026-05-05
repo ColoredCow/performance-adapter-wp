@@ -75,8 +75,7 @@ class ProPerf_Data_Collector {
 	/**
 	 * Collect plugin metrics.
 	 *
-	 * Counts active and inactive plugins. Business value: every inactive plugin
-	 * is dead code loading on every request — costing page load time and conversions.
+	 * Counts active and inactive plugins installed on the site.
 	 *
 	 * @return array Plugin metrics.
 	 */
@@ -103,9 +102,7 @@ class ProPerf_Data_Collector {
 	/**
 	 * Collect hook metrics.
 	 *
-	 * Counts registered hooks via $wp_filter. Business value: hook count is a
-	 * direct indicator of plugin sprawl and backend execution complexity — MFM
-	 * had 344,000 hooks/page, translating directly to slow checkout.
+	 * Counts registered hooks via $wp_filter.
 	 *
 	 * @return array Hook metrics.
 	 */
@@ -123,10 +120,7 @@ class ProPerf_Data_Collector {
 	/**
 	 * Collect database table size metrics.
 	 *
-	 * Reports total DB size and top 10 tables by size. Business value: a bloated
-	 * database means slower queries, slower order processing, and higher hosting
-	 * costs — surfacing which tables are growing enables targeted cleanup before
-	 * the client notices slowness.
+	 * Reports total DB size and top 10 tables by size.
 	 *
 	 * @return array Database size metrics.
 	 */
