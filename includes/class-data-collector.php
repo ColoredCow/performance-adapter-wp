@@ -137,13 +137,15 @@ class ProPerf_Data_Collector {
 			'SELECT table_name, ROUND(data_length + index_length) AS size_bytes
 			 FROM information_schema.tables
 			 WHERE table_schema = DATABASE()
-			 ORDER BY size_bytes DESC LIMIT 10'
+			 ORDER BY size_bytes DESC LIMIT 10',
+			ARRAY_A
 		);
 
 		$top_tables_map = array();
 		if ( $top_tables ) {
 			foreach ( $top_tables as $table ) {
-				$top_tables_map[ $table->table_name ] = intval( $table->size_bytes );
+				$name                    = $table['table_name'] ?? $table['TABLE_NAME'] ?? '';
+				$top_tables_map[ $name ] = intval( $table['size_bytes'] ?? $table['SIZE_BYTES'] ?? 0 );
 			}
 		}
 
