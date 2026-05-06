@@ -143,7 +143,12 @@ class ProPerf_BigQuery_Client {
 					// Hooks.
 					array( 'name' => 'hook_count',              'type' => 'INTEGER' ),
 					// Database.
-					array( 'name' => 'db_total_size_bytes',     'type' => 'INTEGER' ),
+					array( 'name' => 'db_total_size_bytes',              'type' => 'INTEGER' ),
+					// WooCommerce orders.
+					array( 'name' => 'woo_order_items_size_bytes',       'type' => 'INTEGER' ),
+					array( 'name' => 'woo_order_itemmeta_size_bytes',    'type' => 'INTEGER' ),
+					array( 'name' => 'woo_oldest_order_age_days',        'type' => 'INTEGER' ),
+					array( 'name' => 'woo_archival_trigger',             'type' => 'INTEGER' ),
 				),
 			);
 

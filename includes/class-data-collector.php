@@ -24,7 +24,8 @@ class ProPerf_Data_Collector {
 			$this->collect_autoloaded_options(),
 			$this->collect_plugin_metrics(),
 			$this->collect_hook_metrics(),
-			$this->collect_db_table_metrics()
+			$this->collect_db_table_metrics(),
+			$this->collect_woo_order_metrics()
 		);
 	}
 
@@ -158,6 +159,70 @@ class ProPerf_Data_Collector {
 	}
 
 	/**
+	 * Collect WooCommerce order table metrics.
+	 *
+	 * Measures order_items and order_itemmeta table sizes, oldest order age,
+	 * and sets an archival trigger flag when orders older than 365 days exist.
+	 * Returns zeros with woo_active=false when WooCommerce is not installed.
+	 *
+	 * @return array WooCommerce order metrics.
+	 */
+	public function collect_woo_order_metrics() {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return array(
+				'woo_orders' => array(
+					'woo_active'                  => false,
+					'order_items_size_bytes'       => 0,
+					'order_itemmeta_size_bytes'    => 0,
+					'oldest_order_age_days'        => 0,
+					'archival_trigger'             => false,
+				),
+			);
+		}
+
+		global $wpdb;
+
+		$order_items_table    = $wpdb->prefix . 'woocommerce_order_items';
+		$order_itemmeta_table = $wpdb->prefix . 'woocommerce_order_itemmeta';
+
+		$order_items_size = $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT ROUND(data_length + index_length)
+				 FROM information_schema.tables
+				 WHERE table_schema = DATABASE() AND table_name = %s',
+				$order_items_table
+			)
+		);
+
+		$order_itemmeta_size = $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT ROUND(data_length + index_length)
+				 FROM information_schema.tables
+				 WHERE table_schema = DATABASE() AND table_name = %s',
+				$order_itemmeta_table
+			)
+		);
+
+		$oldest_order_age_days = $wpdb->get_var(
+			"SELECT DATEDIFF(NOW(), MIN(post_date))
+			 FROM {$wpdb->posts}
+			 WHERE post_type IN ('shop_order', 'wc_order')
+			 AND post_status != 'trash'"
+		);
+		$oldest_order_age_days = $oldest_order_age_days ? intval( $oldest_order_age_days ) : 0;
+
+		return array(
+			'woo_orders' => array(
+				'woo_active'               => true,
+				'order_items_size_bytes'   => $order_items_size ? intval( $order_items_size ) : 0,
+				'order_itemmeta_size_bytes' => $order_itemmeta_size ? intval( $order_itemmeta_size ) : 0,
+				'oldest_order_age_days'    => $oldest_order_age_days,
+				'archival_trigger'         => $oldest_order_age_days > 365,
+			),
+		);
+	}
+
+	/**
 	 * Format metrics for BigQuery.
 	 *
 	 * @param array $metrics Metrics data.
@@ -180,7 +245,12 @@ class ProPerf_Data_Collector {
 			// Hooks.
 			'hook_count'              => $metrics['hooks']['registered_count'],
 			// Database.
-			'db_total_size_bytes'     => $metrics['database']['total_size_bytes'],
+			'db_total_size_bytes'              => $metrics['database']['total_size_bytes'],
+			// WooCommerce orders.
+			'woo_order_items_size_bytes'        => $metrics['woo_orders']['order_items_size_bytes'],
+			'woo_order_itemmeta_size_bytes'     => $metrics['woo_orders']['order_itemmeta_size_bytes'],
+			'woo_oldest_order_age_days'         => $metrics['woo_orders']['oldest_order_age_days'],
+			'woo_archival_trigger'              => $metrics['woo_orders']['archival_trigger'] ? 1 : 0,
 		);
 	}
 }

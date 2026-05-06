@@ -220,6 +220,7 @@ function properf_render_dashboard() {
 	$plugin_metrics          = $metrics['plugins'];
 	$hook_metrics            = $metrics['hooks'];
 	$db_metrics              = $metrics['database'];
+	$woo_metrics             = $metrics['woo_orders'];
 
 	$count         = $autoloaded_data_metrics['count'];
 	$size_bytes    = $autoloaded_data_metrics['size_bytes'];
@@ -349,6 +350,49 @@ function properf_render_dashboard() {
 			</table>
 		<?php else : ?>
 			<p><?php esc_html_e( 'No database table data found or an error occurred.', 'properf' ); ?></p>
+		<?php endif; ?>
+
+		<h2 style="margin-top: 30px;"><?php esc_html_e( 'WooCommerce Order Metrics', 'properf' ); ?></h2>
+		<?php if ( ! $woo_metrics['woo_active'] ) : ?>
+			<p><?php esc_html_e( 'WooCommerce is not active on this site.', 'properf' ); ?></p>
+		<?php else : ?>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Metric', 'properf' ); ?></th>
+						<th><?php esc_html_e( 'Value', 'properf' ); ?></th>
+						<th><?php esc_html_e( 'Target', 'properf' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><strong><?php esc_html_e( 'Order Items Table Size', 'properf' ); ?></strong></td>
+						<td><?php printf( '%.2f MB', $woo_metrics['order_items_size_bytes'] / 1024 / 1024 ); ?></td>
+						<td>—</td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Order Itemmeta Table Size', 'properf' ); ?></strong></td>
+						<td><?php printf( '%.2f MB', $woo_metrics['order_itemmeta_size_bytes'] / 1024 / 1024 ); ?></td>
+						<td>—</td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Oldest Order Age', 'properf' ); ?></strong></td>
+						<td><?php echo esc_html( number_format( $woo_metrics['oldest_order_age_days'] ) ) . ' days'; ?></td>
+						<td>&lt; 365 days</td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Archival Trigger', 'properf' ); ?></strong></td>
+						<td>
+							<?php if ( $woo_metrics['archival_trigger'] ) : ?>
+								<span style="color: #d63638; font-weight: bold;"><?php esc_html_e( 'Yes — orders older than 1 year detected', 'properf' ); ?></span>
+							<?php else : ?>
+								<span style="color: #00a32a;"><?php esc_html_e( 'No', 'properf' ); ?></span>
+							<?php endif; ?>
+						</td>
+						<td><?php esc_html_e( 'No', 'properf' ); ?></td>
+					</tr>
+				</tbody>
+			</table>
 		<?php endif; ?>
 	</div>
 <?php
