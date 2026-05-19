@@ -135,7 +135,7 @@ class ProPerf_Data_Collector {
 		);
 
 		$top_tables = $wpdb->get_results(
-			'SELECT table_name, ROUND(data_length + index_length) AS size_bytes
+			'SELECT table_name AS tbl_name, ROUND(data_length + index_length) AS size_bytes
 			 FROM information_schema.tables
 			 WHERE table_schema = DATABASE()
 			 ORDER BY size_bytes DESC LIMIT 10',
@@ -145,8 +145,12 @@ class ProPerf_Data_Collector {
 		$top_tables_map = array();
 		if ( $top_tables ) {
 			foreach ( $top_tables as $table ) {
+<<<<<<< Updated upstream
 				$name                    = $table['table_name'] ?? $table['TABLE_NAME'] ?? '';
 				$top_tables_map[ $name ] = intval( $table['size_bytes'] ?? $table['SIZE_BYTES'] ?? 0 );
+=======
+				$top_tables_map[ $table->tbl_name ] = intval( $table->size_bytes );
+>>>>>>> Stashed changes
 			}
 		}
 
