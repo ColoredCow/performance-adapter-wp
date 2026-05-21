@@ -102,9 +102,16 @@ class ProPerf_Data_Collector {
 			)
 		);
 
-		$oldest_order_date = $wpdb->get_var(
-			"SELECT MIN(post_date_gmt) FROM {$wpdb->posts} WHERE post_type = 'shop_order' AND post_status != 'trash'"
-		);
+		if ( class_exists( '\Automattic\WooCommerce\Utilities\OrderUtil' )
+			&& \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled() ) {
+			$oldest_order_date = $wpdb->get_var(
+				"SELECT MIN(date_created_gmt) FROM {$wpdb->prefix}wc_orders WHERE status != 'trash'"
+			);
+		} else {
+			$oldest_order_date = $wpdb->get_var(
+				"SELECT MIN(post_date_gmt) FROM {$wpdb->posts} WHERE post_type = 'shop_order' AND post_status != 'trash'"
+			);
+		}
 
 		return array(
 			'woo' => array(
