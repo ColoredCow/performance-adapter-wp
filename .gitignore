@@ -52,4 +52,7 @@ logs/
 *.phps
 .php_cs.cache
 
+# Claude Code local config (personal, not shared)
+CLAUDE.local.md
+
 
