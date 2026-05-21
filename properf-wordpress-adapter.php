@@ -222,14 +222,12 @@ function properf_render_dashboard() {
 	$size_bytes    = $autoloaded_data_metrics['size_bytes'];
 	$top_size_keys = $autoloaded_data_metrics['top_size_keys'];
 
-	$woo_metrics        = $metrics['woo'];
-	$oldest_date        = $woo_metrics['oldest_order_date'];
-	$oldest_age_days    = null;
-	$archival_triggered = false;
+	$woo_metrics     = $metrics['woo'];
+	$oldest_date     = $woo_metrics['oldest_order_date'];
+	$oldest_age_days = null;
 
 	if ( $oldest_date ) {
-		$oldest_age_days    = (int) floor( ( time() - strtotime( $oldest_date ) ) / DAY_IN_SECONDS );
-		$archival_triggered = $oldest_age_days >= 365;
+		$oldest_age_days = (int) floor( ( time() - strtotime( $oldest_date ) ) / DAY_IN_SECONDS );
 	}
 
 	$last_sync = get_option( 'properf_bq_last_sync' );
@@ -319,40 +317,24 @@ function properf_render_dashboard() {
 				<tr>
 					<th><?php esc_html_e( 'Metric', 'properf' ); ?></th>
 					<th><?php esc_html_e( 'Value', 'properf' ); ?></th>
-					<th><?php esc_html_e( 'Target', 'properf' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
 					<td><strong><?php esc_html_e( 'Order Items Table Size', 'properf' ); ?></strong></td>
 					<td><?php echo esc_html( number_format( $woo_metrics['order_items_size_mb'], 2 ) . ' MB' ); ?></td>
-					<td>—</td>
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Order Itemmeta Table Size', 'properf' ); ?></strong></td>
 					<td><?php echo esc_html( number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ) . ' MB' ); ?></td>
-					<td>—</td>
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Oldest Order Date', 'properf' ); ?></strong></td>
 					<td><?php echo $oldest_date ? esc_html( $oldest_date ) : '—'; ?></td>
-					<td>—</td>
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Oldest Order Age', 'properf' ); ?></strong></td>
 					<td><?php echo null !== $oldest_age_days ? esc_html( number_format( $oldest_age_days ) . ' days' ) : '—'; ?></td>
-					<td><?php esc_html_e( '< 365 days', 'properf' ); ?></td>
-				</tr>
-				<tr>
-					<td><strong><?php esc_html_e( 'Archival Trigger', 'properf' ); ?></strong></td>
-					<td>
-						<?php if ( $archival_triggered ) : ?>
-							<span style="color: #dc3232; font-weight: bold;"><?php esc_html_e( 'Yes — orders older than 1 year detected', 'properf' ); ?></span>
-						<?php else : ?>
-							<?php esc_html_e( 'No', 'properf' ); ?>
-						<?php endif; ?>
-					</td>
-					<td><?php esc_html_e( 'No', 'properf' ); ?></td>
 				</tr>
 			</tbody>
 		</table>
@@ -624,24 +606,35 @@ function properf_settings_redirect( $location ) {
 add_filter( 'wp_redirect', 'properf_settings_redirect' );
 
 /**
+ * Default metrics structure used as a safe fallback.
+ *
+ * @return array Default metrics.
+ */
+function properf_default_metrics() {
+	return array(
+		'autoloaded_option' => array(
+			'count'         => 0,
+			'size_bytes'    => 0,
+			'top_size_keys' => array(),
+		),
+		'woo'               => array(
+			'order_items_size_mb'    => 0.0,
+			'order_itemmeta_size_mb' => 0.0,
+			'oldest_order_date'      => null,
+		),
+	);
+}
+
+/**
  * Get live data from collector.
  *
  * @return array Metrics data.
  */
 function properf_get_live_data() {
 	if ( ! class_exists( 'ProPerf_Data_Collector' ) ) {
-		return array(
-			'autoloaded_option' => array(
-				'count'         => 'Error: Collector Class Missing',
-				'size_bytes'    => 0,
-				'top_size_keys' => array(),
-			),
-			'woo'               => array(
-				'order_items_size_mb'    => 0.0,
-				'order_itemmeta_size_mb' => 0.0,
-				'oldest_order_date'      => null,
-			),
-		);
+		$defaults = properf_default_metrics();
+		$defaults['autoloaded_option']['count'] = 'Error: Collector Class Missing';
+		return $defaults;
 	}
 
 	try {
@@ -649,17 +642,8 @@ function properf_get_live_data() {
 		return $collector->get_data();
 	} catch ( Exception $e ) {
 		error_log( 'ProPerf Error: ' . $e->getMessage() );
-		return array(
-			'autoloaded_option' => array(
-				'count'         => 'Error: ' . $e->getMessage(),
-				'size_bytes'    => 0,
-				'top_size_keys' => array(),
-			),
-			'woo'               => array(
-				'order_items_size_mb'    => 0.0,
-				'order_itemmeta_size_mb' => 0.0,
-				'oldest_order_date'      => null,
-			),
-		);
+		$defaults = properf_default_metrics();
+		$defaults['autoloaded_option']['count'] = 'Error: ' . $e->getMessage();
+		return $defaults;
 	}
 }
