@@ -135,6 +135,9 @@ class ProPerf_BigQuery_Client {
 					array( 'name' => 'autoloaded_option_count', 'type' => 'INTEGER' ),
 					array( 'name' => 'autoloaded_option_size', 'type' => 'INTEGER' ),
 					array( 'name' => 'site_url', 'type' => 'STRING' ),
+					array( 'name' => 'woo_order_items_size_mb', 'type' => 'FLOAT' ),
+					array( 'name' => 'woo_order_itemmeta_size_mb', 'type' => 'FLOAT' ),
+					array( 'name' => 'woo_oldest_order_date', 'type' => 'DATE' ),
 				),
 			);
 
