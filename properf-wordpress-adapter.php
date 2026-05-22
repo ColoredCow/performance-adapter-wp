@@ -336,6 +336,10 @@ function properf_render_dashboard() {
 					<td><strong><?php esc_html_e( 'Oldest Order Age', 'properf' ); ?></strong></td>
 					<td><?php echo null !== $oldest_age_days ? esc_html( number_format( $oldest_age_days ) . ' days' ) : '—'; ?></td>
 				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Order Query Execution Time', 'properf' ); ?></strong></td>
+					<td><?php echo esc_html( $woo_metrics['query_execution_ms'] . ' ms' ); ?></td>
+				</tr>
 			</tbody>
 		</table>
 	</div>
@@ -621,6 +625,7 @@ function properf_default_metrics() {
 			'order_items_size_mb'    => 0.0,
 			'order_itemmeta_size_mb' => 0.0,
 			'oldest_order_date'      => null,
+			'query_execution_ms'     => 0,
 		),
 	);
 }

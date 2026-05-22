@@ -113,11 +113,17 @@ class ProPerf_Data_Collector {
 			);
 		}
 
+		$qet_start = microtime( true );
+		$wpdb->get_results( "SELECT order_item_id, order_id, order_item_name FROM {$wpdb->prefix}woocommerce_order_items ORDER BY order_id DESC LIMIT 100" );
+		$wpdb->get_results( "SELECT meta_id, order_item_id, meta_key, meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta ORDER BY order_item_id DESC LIMIT 100" );
+		$query_execution_ms = (int) round( ( microtime( true ) - $qet_start ) * 1000 );
+
 		return array(
 			'woo' => array(
 				'order_items_size_mb'    => $items_size ? round( floatval( $items_size ), 4 ) : 0.0,
 				'order_itemmeta_size_mb' => $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : 0.0,
 				'oldest_order_date'      => $oldest_order_date ? gmdate( 'Y-m-d', strtotime( $oldest_order_date ) ) : null,
+				'query_execution_ms'     => $query_execution_ms,
 			),
 		);
 	}
@@ -140,6 +146,7 @@ class ProPerf_Data_Collector {
 			'woo_order_items_size_mb'    => $metrics['woo']['order_items_size_mb'],
 			'woo_order_itemmeta_size_mb' => $metrics['woo']['order_itemmeta_size_mb'],
 			'woo_oldest_order_date'      => $metrics['woo']['oldest_order_date'],
+			'woo_query_execution_ms'     => $metrics['woo']['query_execution_ms'],
 		);
 	}
 }
