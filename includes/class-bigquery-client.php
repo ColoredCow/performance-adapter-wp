@@ -138,6 +138,7 @@ class ProPerf_BigQuery_Client {
 					array( 'name' => 'woo_order_items_size_mb', 'type' => 'FLOAT' ),
 					array( 'name' => 'woo_order_itemmeta_size_mb', 'type' => 'FLOAT' ),
 					array( 'name' => 'woo_oldest_order_date', 'type' => 'DATE' ),
+					array( 'name' => 'woo_query_execution_ms', 'type' => 'INTEGER' ),
 				),
 			);
 
