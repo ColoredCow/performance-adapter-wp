@@ -114,8 +114,13 @@ class ProPerf_Data_Collector {
 		}
 
 		$qet_start = microtime( true );
-		$wpdb->get_results( "SELECT order_item_id, order_id, order_item_name FROM {$wpdb->prefix}woocommerce_order_items ORDER BY order_id DESC LIMIT 100" );
-		$wpdb->get_results( "SELECT meta_id, order_item_id, meta_key, meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta ORDER BY order_item_id DESC LIMIT 100" );
+		$wpdb->get_var(
+			"SELECT COUNT(DISTINCT oi.order_id)
+			FROM {$wpdb->prefix}woocommerce_order_items oi
+			INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim
+			ON oi.order_item_id = oim.order_item_id
+			WHERE oim.meta_key = '_qty'"
+		);
 		$query_execution_ms = (int) round( ( microtime( true ) - $qet_start ) * 1000 );
 
 		return array(
