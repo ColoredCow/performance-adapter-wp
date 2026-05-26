@@ -349,7 +349,7 @@ function properf_render_dashboard() {
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></strong></td>
-					<td><?php echo $last_archival_date ? esc_html( $last_archival_date ) : '—'; ?></td>
+					<td><?php echo $last_archival_date ? esc_html( $last_archival_date ) : esc_html__( 'Never', 'properf' ); ?></td>
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Current Query Execution Time', 'properf' ); ?></strong></td>
