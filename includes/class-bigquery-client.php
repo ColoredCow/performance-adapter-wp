@@ -131,14 +131,17 @@ class ProPerf_BigQuery_Client {
 			rewind( $stream );
 			$schema = array(
 				'fields' => array(
-					array( 'name' => 'timestamp_utc', 'type' => 'TIMESTAMP' ),
-					array( 'name' => 'autoloaded_option_count', 'type' => 'INTEGER' ),
-					array( 'name' => 'autoloaded_option_size', 'type' => 'INTEGER' ),
-					array( 'name' => 'site_url', 'type' => 'STRING' ),
-					array( 'name' => 'woo_order_items_size_mb', 'type' => 'FLOAT' ),
-					array( 'name' => 'woo_order_itemmeta_size_mb', 'type' => 'FLOAT' ),
-					array( 'name' => 'woo_oldest_order_date', 'type' => 'DATE' ),
-					array( 'name' => 'woo_query_execution_ms', 'type' => 'INTEGER' ),
+					array( 'name' => 'timestamp_utc',              'type' => 'TIMESTAMP'                    ),
+					array( 'name' => 'autoloaded_option_count',    'type' => 'INTEGER'                      ),
+					array( 'name' => 'autoloaded_option_size',     'type' => 'INTEGER'                      ),
+					array( 'name' => 'site_url',                   'type' => 'STRING'                       ),
+					array( 'name' => 'woo_order_items_size_mb',    'type' => 'FLOAT'                        ),
+					array( 'name' => 'woo_order_itemmeta_size_mb', 'type' => 'FLOAT'                        ),
+					array( 'name' => 'woo_oldest_order_date',      'type' => 'DATE'                         ),
+					array( 'name' => 'woo_orders_older_than_2y',   'type' => 'INTEGER'                      ),
+					array( 'name' => 'woo_last_archival_date',     'type' => 'DATE',    'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_query_execution_ms',     'type' => 'INTEGER'                      ),
+					array( 'name' => 'woo_baseline_qet_ms',        'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
 				),
 			);
 

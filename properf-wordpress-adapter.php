@@ -56,15 +56,17 @@ function properf_handle_bigquery_push() {
 		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
 
 		$collector = new ProPerf_Data_Collector();
+		$metrics   = $collector->get_data();
 		$bq_client = new ProPerf_BigQuery_Client();
 
-		$success = $bq_client->push_metrics( $collector->get_data() );
+		$success = $bq_client->push_metrics( $metrics );
 
 		// Persist execution info (shared with cron)
 		update_option( 'properf_bq_last_sync', time(), false );
 		update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
 
 		if ( $success ) {
+			$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
 			delete_option( 'properf_bq_last_sync_error' );
 			add_settings_error(
 				'properf_messages',
@@ -120,15 +122,17 @@ function properf_collect_and_push_metrics() {
 	require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
 
 	$collector = new ProPerf_Data_Collector();
+	$metrics   = $collector->get_data();
 	$bq_client = new ProPerf_BigQuery_Client();
 
-	$success = $bq_client->push_metrics( $collector->get_data() );
+	$success = $bq_client->push_metrics( $metrics );
 
 	// Persist cron execution info.
 	update_option( 'properf_bq_last_sync', time(), false );
 	update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
 
 	if ( $success ) {
+		$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
 		delete_option( 'properf_bq_last_sync_error' );
 		error_log(
 			'ProPerf: Metrics successfully pushed to BigQuery at ' . gmdate( 'Y-m-d H:i:s' )
@@ -222,9 +226,12 @@ function properf_render_dashboard() {
 	$size_bytes    = $autoloaded_data_metrics['size_bytes'];
 	$top_size_keys = $autoloaded_data_metrics['top_size_keys'];
 
-	$woo_metrics     = $metrics['woo'];
-	$oldest_date     = $woo_metrics['oldest_order_date'];
-	$oldest_age_days = null;
+	$woo_metrics          = $metrics['woo'];
+	$oldest_date          = $woo_metrics['oldest_order_date'];
+	$oldest_age_days      = null;
+	$orders_older_than_2y = $woo_metrics['orders_older_than_2y'];
+	$last_archival_date   = $woo_metrics['last_archival_date'];
+	$baseline_qet_ms      = $woo_metrics['baseline_qet_ms'];
 
 	if ( $oldest_date ) {
 		$oldest_age_days = (int) floor( ( time() - strtotime( $oldest_date ) ) / DAY_IN_SECONDS );
@@ -337,8 +344,20 @@ function properf_render_dashboard() {
 					<td><?php echo null !== $oldest_age_days ? esc_html( number_format( $oldest_age_days ) . ' days' ) : '—'; ?></td>
 				</tr>
 				<tr>
-					<td><strong><?php esc_html_e( 'Order Query Execution Time', 'properf' ); ?></strong></td>
+					<td><strong><?php esc_html_e( 'Orders Older Than 2 Years', 'properf' ); ?></strong></td>
+					<td><?php echo esc_html( number_format( $orders_older_than_2y ) ); ?></td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></strong></td>
+					<td><?php echo $last_archival_date ? esc_html( $last_archival_date ) : '—'; ?></td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Current Query Execution Time', 'properf' ); ?></strong></td>
 					<td><?php echo esc_html( $woo_metrics['query_execution_ms'] . ' ms' ); ?></td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Baseline Query Execution Time', 'properf' ); ?></strong></td>
+					<td><?php echo null !== $baseline_qet_ms ? esc_html( $baseline_qet_ms . ' ms' ) : '—'; ?></td>
 				</tr>
 			</tbody>
 		</table>
@@ -625,7 +644,10 @@ function properf_default_metrics() {
 			'order_items_size_mb'    => 0.0,
 			'order_itemmeta_size_mb' => 0.0,
 			'oldest_order_date'      => null,
+			'orders_older_than_2y'   => 0,
+			'last_archival_date'     => null,
 			'query_execution_ms'     => 0,
+			'baseline_qet_ms'        => null,
 		),
 	);
 }
