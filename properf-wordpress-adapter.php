@@ -49,6 +49,17 @@ function properf_init() {
 add_action( 'plugins_loaded', 'properf_init' );
 
 /**
+ * Handle mark archival done on admin init.
+ */
+function properf_handle_mark_archival() {
+	if ( isset( $_POST['properf_mark_archival'] ) && check_admin_referer( 'properf_mark_archival_action', 'properf_mark_archival_nonce' ) ) {
+		update_option( 'properf_last_archival_date', gmdate( 'Y-m-d' ), false );
+		update_option( 'properf_qet_history', array(), false );
+	}
+}
+add_action( 'admin_init', 'properf_handle_mark_archival' );
+
+/**
  * Handle BigQuery push on admin init.
  */
 function properf_handle_bigquery_push() {
@@ -349,7 +360,13 @@ function properf_render_dashboard() {
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></strong></td>
-					<td><?php echo $last_archival_date ? esc_html( $last_archival_date ) : esc_html__( 'Never', 'properf' ); ?></td>
+					<td>
+						<?php echo $last_archival_date ? esc_html( $last_archival_date ) : esc_html__( 'Never', 'properf' ); ?>
+						<form method="post" style="display:inline; margin-left: 12px;">
+							<?php wp_nonce_field( 'properf_mark_archival_action', 'properf_mark_archival_nonce' ); ?>
+							<input type="submit" name="properf_mark_archival" class="button button-secondary" value="Mark Archival Done">
+						</form>
+					</td>
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Current Query Execution Time', 'properf' ); ?></strong></td>
