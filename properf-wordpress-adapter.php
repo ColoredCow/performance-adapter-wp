@@ -374,7 +374,17 @@ function properf_render_dashboard() {
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Baseline Query Execution Time', 'properf' ); ?></strong></td>
-					<td><?php echo null !== $baseline_qet_ms ? esc_html( $baseline_qet_ms . ' ms' ) : '—'; ?></td>
+					<td><?php
+					if ( null !== $baseline_qet_ms ) {
+						$baseline_qet_source = $woo_metrics['baseline_qet_source'];
+						$source_label        = 'post-archival' === $baseline_qet_source
+							? __( 'avg of first 5 post-archival readings', 'properf' )
+							: __( 'avg of last 10 daily readings', 'properf' );
+						echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span style="color:#888;font-size:0.9em;">(' . esc_html( $source_label ) . ')</span>';
+					} else {
+						echo '—';
+					}
+					?></td>
 				</tr>
 			</tbody>
 		</table>
@@ -665,6 +675,7 @@ function properf_default_metrics() {
 			'last_archival_date'     => null,
 			'query_execution_ms'     => 0,
 			'baseline_qet_ms'        => null,
+			'baseline_qet_source'    => null,
 		),
 	);
 }
