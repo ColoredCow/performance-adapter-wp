@@ -442,6 +442,49 @@ function properf_register_settings() {
 		'properf-settings',
 		'properf_bigquery_section'
 	);
+
+	register_setting(
+		'properf_bigquery_settings',
+		'properf_archival_threshold_years',
+		array(
+			'type'              => 'integer',
+			'sanitize_callback' => 'properf_sanitize_threshold_years',
+			'default'           => 2,
+		)
+	);
+
+	register_setting(
+		'properf_bigquery_settings',
+		'properf_last_archival_date',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'properf_sanitize_archival_date',
+			'default'           => '',
+		)
+	);
+
+	add_settings_section(
+		'properf_woo_section',
+		__( 'WooCommerce Settings', 'properf' ),
+		'properf_woo_section_callback',
+		'properf-settings'
+	);
+
+	add_settings_field(
+		'properf_archival_threshold_years',
+		__( 'Retention Window (Years)', 'properf' ),
+		'properf_archival_threshold_years_field',
+		'properf-settings',
+		'properf_woo_section'
+	);
+
+	add_settings_field(
+		'properf_last_archival_date',
+		__( 'Last Archival Date', 'properf' ),
+		'properf_last_archival_date_field',
+		'properf-settings',
+		'properf_woo_section'
+	);
 }
 
 /**
@@ -518,6 +561,68 @@ function properf_bigquery_private_key_field() {
 }
 
 /**
+ * Sanitize retention window — must be a positive integer, min 1.
+ *
+ * @param mixed $value Submitted value.
+ * @return int Sanitized value.
+ */
+function properf_sanitize_threshold_years( $value ) {
+	$value = intval( $value );
+	return $value >= 1 ? $value : 2;
+}
+
+/**
+ * Sanitize archival date — must be a valid Y-m-d date or empty.
+ * Resets QET history when the date changes so baseline recomputes from the new post-archival state.
+ *
+ * @param string $value Submitted value.
+ * @return string Sanitized date or empty string.
+ */
+function properf_sanitize_archival_date( $value ) {
+	$value = sanitize_text_field( $value );
+	if ( '' === $value ) {
+		return '';
+	}
+	$date = \DateTime::createFromFormat( 'Y-m-d', $value );
+	if ( ! $date || $date->format( 'Y-m-d' ) !== $value ) {
+		return get_option( 'properf_last_archival_date', '' );
+	}
+	if ( $value !== get_option( 'properf_last_archival_date', '' ) ) {
+		update_option( 'properf_qet_history', array(), false );
+	}
+	return $value;
+}
+
+/**
+ * WooCommerce section callback.
+ */
+function properf_woo_section_callback() {
+	echo '<p>' . esc_html__( 'Configure WooCommerce-specific settings for this client.', 'properf' ) . '</p>';
+}
+
+/**
+ * Retention window field.
+ */
+function properf_archival_threshold_years_field() {
+	$value = intval( get_option( 'properf_archival_threshold_years', 2 ) );
+	?>
+	<input type="number" name="properf_archival_threshold_years" value="<?php echo esc_attr( $value ); ?>" min="1" step="1" class="small-text" />
+	<p class="description"><?php esc_html_e( 'Orders older than this many years will be counted as archival candidates. Default is 2.', 'properf' ); ?></p>
+	<?php
+}
+
+/**
+ * Last archival date field.
+ */
+function properf_last_archival_date_field() {
+	$value = get_option( 'properf_last_archival_date', '' );
+	?>
+	<input type="date" name="properf_last_archival_date" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+	<p class="description"><?php esc_html_e( 'Optional. Enter the date when orders were last archived for this client. Used as a reference point on the dashboard.', 'properf' ); ?></p>
+	<?php
+}
+
+/**
  * Render Settings page.
  */
 function properf_render_settings() {
@@ -579,6 +684,29 @@ function properf_render_settings() {
 						</th>
 						<td>
 							<?php properf_bigquery_private_key_field(); ?>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<h2><?php esc_html_e( 'WooCommerce Settings', 'properf' ); ?></h2>
+			<?php properf_woo_section_callback(); ?>
+			<table class="form-table" role="presentation">
+				<tbody>
+					<tr>
+						<th scope="row">
+							<label for="properf_archival_threshold_years"><?php esc_html_e( 'Retention Window (Years)', 'properf' ); ?></label>
+						</th>
+						<td>
+							<?php properf_archival_threshold_years_field(); ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="properf_last_archival_date"><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></label>
+						</th>
+						<td>
+							<?php properf_last_archival_date_field(); ?>
 						</td>
 					</tr>
 				</tbody>
