@@ -568,12 +568,14 @@ function properf_bigquery_private_key_field() {
  */
 function properf_sanitize_threshold_years( $value ) {
 	$value = intval( $value );
-	return $value >= 1 ? $value : 2;
+	if ( $value < 1 || $value > 20 ) {
+		return intval( get_option( 'properf_archival_threshold_years', 2 ) );
+	}
+	return $value;
 }
 
 /**
  * Sanitize archival date — must be a valid Y-m-d date or empty.
- * Resets QET history when the date changes so baseline recomputes from the new post-archival state.
  *
  * @param string $value Submitted value.
  * @return string Sanitized date or empty string.
@@ -587,11 +589,25 @@ function properf_sanitize_archival_date( $value ) {
 	if ( ! $date || $date->format( 'Y-m-d' ) !== $value ) {
 		return get_option( 'properf_last_archival_date', '' );
 	}
-	if ( $value !== get_option( 'properf_last_archival_date', '' ) ) {
-		update_option( 'properf_qet_history', array(), false );
-	}
 	return $value;
 }
+
+/**
+ * Reset QET history when archival date changes so baseline recomputes from the new post-archival state.
+ *
+ * @param string $old Previous value.
+ * @param string $new New value.
+ */
+add_action(
+	'update_option_properf_last_archival_date',
+	function ( $old, $new ) {
+		if ( $old !== $new ) {
+			update_option( 'properf_qet_history', array(), false );
+		}
+	},
+	10,
+	2
+);
 
 /**
  * WooCommerce section callback.
@@ -606,7 +622,7 @@ function properf_woo_section_callback() {
 function properf_archival_threshold_years_field() {
 	$value = intval( get_option( 'properf_archival_threshold_years', 2 ) );
 	?>
-	<input type="number" name="properf_archival_threshold_years" value="<?php echo esc_attr( $value ); ?>" min="1" step="1" class="small-text" />
+	<input type="number" name="properf_archival_threshold_years" value="<?php echo esc_attr( $value ); ?>" min="1" max="20" step="1" class="small-text" />
 	<p class="description"><?php esc_html_e( 'Orders older than this many years will be counted as archival candidates. Default is 2.', 'properf' ); ?></p>
 	<?php
 }
