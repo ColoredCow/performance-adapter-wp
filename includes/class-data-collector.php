@@ -223,10 +223,12 @@ class ProPerf_Data_Collector {
 			}
 		}
 
-		$last_ten = array_slice( $history, -10 );
+		$all_ms = array_column( $history, 'ms' );
+		sort( $all_ms );
+		$lowest = array_slice( $all_ms, 0, 10 );
 		return array(
-			'ms'     => (int) round( array_sum( array_column( $last_ten, 'ms' ) ) / count( $last_ten ) ),
-			'source' => 'rolling',
+			'ms'     => (int) round( array_sum( $lowest ) / count( $lowest ) ),
+			'source' => 'lowest-10',
 		);
 	}
 

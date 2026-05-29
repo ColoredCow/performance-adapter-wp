@@ -379,7 +379,7 @@ function properf_render_dashboard() {
 						$baseline_qet_source = $woo_metrics['baseline_qet_source'];
 						$source_label        = 'post-archival' === $baseline_qet_source
 							? __( 'avg of first 5 post-archival readings', 'properf' )
-							: __( 'avg of last 10 daily readings', 'properf' );
+							: __( 'avg of 10 lowest readings', 'properf' );
 						echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span style="color:#888;font-size:0.9em;">(' . esc_html( $source_label ) . ')</span>';
 					} else {
 						echo '—';
