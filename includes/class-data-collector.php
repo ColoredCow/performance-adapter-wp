@@ -146,7 +146,7 @@ class ProPerf_Data_Collector {
 		$query_execution_ms = (int) round( ( microtime( true ) - $qet_start ) * 1000 );
 
 		$last_archival_date = get_option( 'properf_last_archival_date', null ) ?: null;
-		$baseline_qet_ms    = $this->get_baseline_qet( $last_archival_date );
+		$baseline           = $this->get_baseline_qet( $last_archival_date );
 
 		return array(
 			'woo' => array(
@@ -156,7 +156,8 @@ class ProPerf_Data_Collector {
 				'orders_older_than_2y'   => $orders_older_than_2y,
 				'last_archival_date'     => $last_archival_date,
 				'query_execution_ms'     => $query_execution_ms,
-				'baseline_qet_ms'        => $baseline_qet_ms,
+				'baseline_qet_ms'        => $baseline['ms'],
+				'baseline_qet_source'    => $baseline['source'],
 			),
 		);
 	}
@@ -199,7 +200,7 @@ class ProPerf_Data_Collector {
 		$history = get_option( 'properf_qet_history', array() );
 
 		if ( empty( $history ) ) {
-			return null;
+			return array( 'ms' => null, 'source' => null );
 		}
 
 		if ( $last_archival_date ) {
@@ -215,12 +216,18 @@ class ProPerf_Data_Collector {
 
 			if ( count( $post_archival ) >= 5 ) {
 				$readings = array_slice( $post_archival, 0, 5 );
-				return (int) round( array_sum( array_column( $readings, 'ms' ) ) / 5 );
+				return array(
+					'ms'     => (int) round( array_sum( array_column( $readings, 'ms' ) ) / 5 ),
+					'source' => 'post-archival',
+				);
 			}
 		}
 
 		$last_ten = array_slice( $history, -10 );
-		return (int) round( array_sum( array_column( $last_ten, 'ms' ) ) / count( $last_ten ) );
+		return array(
+			'ms'     => (int) round( array_sum( array_column( $last_ten, 'ms' ) ) / count( $last_ten ) ),
+			'source' => 'rolling',
+		);
 	}
 
 	/**
