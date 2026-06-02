@@ -49,17 +49,6 @@ function properf_init() {
 add_action( 'plugins_loaded', 'properf_init' );
 
 /**
- * Handle mark archival done on admin init.
- */
-function properf_handle_mark_archival() {
-	if ( isset( $_POST['properf_mark_archival'] ) && check_admin_referer( 'properf_mark_archival_action', 'properf_mark_archival_nonce' ) ) {
-		update_option( 'properf_last_archival_date', gmdate( 'Y-m-d' ), false );
-		update_option( 'properf_qet_history', array(), false );
-	}
-}
-add_action( 'admin_init', 'properf_handle_mark_archival' );
-
-/**
  * Handle BigQuery push on admin init.
  */
 function properf_handle_bigquery_push() {
