@@ -261,7 +261,7 @@ class ProPerf_Data_Collector {
 		$lowest = array_slice( $all_ms, 0, 10 );
 		return array(
 			'ms'     => (int) round( array_sum( $lowest ) / count( $lowest ) ),
-			'source' => 'lowest-10',
+			'source' => 'lowest-10:' . count( $lowest ),
 		);
 	}
 

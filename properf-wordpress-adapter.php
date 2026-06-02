@@ -364,7 +364,11 @@ $last_sync = get_option( 'properf_bq_last_sync' );
 							/* translators: %1$d = readings collected so far, %2$d = readings required */
 							$source_label = sprintf( __( 'pending post-archival baseline (%1$d/10 readings)', 'properf' ), $count );
 						} else {
-							$source_label = __( 'avg of 10 lowest readings', 'properf' );
+							$count        = str_starts_with( $baseline_qet_source ?? '', 'lowest-10:' )
+								? (int) explode( ':', $baseline_qet_source )[1]
+								: 10;
+							/* translators: %d = number of daily readings used */
+							$source_label = sprintf( __( 'avg of %d daily readings', 'properf' ), $count );
 						}
 						echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span style="color:#888;font-size:0.9em;">(' . esc_html( $source_label ) . ')</span>';
 					} else {
