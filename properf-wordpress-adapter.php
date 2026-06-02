@@ -367,17 +367,17 @@ $last_sync = get_option( 'properf_bq_last_sync' );
 					if ( null !== $baseline_qet_ms ) {
 						$baseline_qet_source = $woo_metrics['baseline_qet_source'];
 						if ( 'post-archival' === $baseline_qet_source ) {
-							$source_label = __( 'locked post-archival baseline', 'properf' );
+							$source_label = __( 'stable baseline', 'properf' );
 						} elseif ( str_starts_with( $baseline_qet_source ?? '', 'post-archival-pending:' ) ) {
 							$count        = (int) explode( ':', $baseline_qet_source )[1];
-							/* translators: %1$d = readings collected so far, %2$d = readings required */
-							$source_label = sprintf( __( 'pending post-archival baseline (%1$d/10 readings)', 'properf' ), $count );
+							/* translators: %d = number of days of data collected so far out of 10 */
+							$source_label = sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $count );
 						} else {
 							$count        = str_starts_with( $baseline_qet_source ?? '', 'lowest-10:' )
 								? (int) explode( ':', $baseline_qet_source )[1]
 								: 10;
 							/* translators: %d = number of daily readings used */
-							$source_label = sprintf( __( 'avg of %d daily readings', 'properf' ), $count );
+							$source_label = sprintf( __( 'based on %d days of data', 'properf' ), $count );
 						}
 						echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span style="color:#888;font-size:0.9em;">(' . esc_html( $source_label ) . ')</span>';
 					} else {
