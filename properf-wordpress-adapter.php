@@ -228,6 +228,7 @@ function properf_render_dashboard() {
 
 	$woo_metrics          = $metrics['woo'];
 	$oldest_date          = $woo_metrics['oldest_order_date'];
+	$latest_date          = $woo_metrics['latest_order_date'];
 
 	$orders_older_than_threshold = $woo_metrics['orders_older_than_threshold'];
 	$total_orders                = $woo_metrics['total_orders'];
@@ -336,6 +337,10 @@ $last_sync = get_option( 'properf_bq_last_sync' );
 				<tr>
 					<td><strong><?php esc_html_e( 'Oldest Order Date', 'properf' ); ?></strong></td>
 					<td><?php echo $oldest_date ? esc_html( $oldest_date ) : '—'; ?></td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Latest Order Date', 'properf' ); ?></strong></td>
+					<td><?php echo $latest_date ? esc_html( $latest_date ) : '—'; ?></td>
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Total Orders', 'properf' ); ?></strong></td>
@@ -810,6 +815,7 @@ function properf_default_metrics() {
 			'order_items_size_mb'    => 0.0,
 			'order_itemmeta_size_mb' => 0.0,
 			'oldest_order_date'      => null,
+			'latest_order_date'      => null,
 			'orders_older_than_threshold' => 0,
 			'total_orders'                => 0,
 		'threshold_years'             => intval( get_option( 'properf_archival_threshold_years', 2 ) ),

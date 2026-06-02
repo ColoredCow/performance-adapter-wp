@@ -107,8 +107,11 @@ class ProPerf_Data_Collector {
 		$threshold_years = intval( get_option( 'properf_archival_threshold_years', 2 ) );
 
 		if ( $use_hpos ) {
-			$oldest_order_date        = $wpdb->get_var(
+			$oldest_order_date  = $wpdb->get_var(
 				"SELECT MIN(date_created_gmt) FROM {$wpdb->prefix}wc_orders WHERE status != 'trash'"
+			);
+			$latest_order_date  = $wpdb->get_var(
+				"SELECT MAX(date_created_gmt) FROM {$wpdb->prefix}wc_orders WHERE status != 'trash'"
 			);
 			$orders_older_than_threshold = (int) $wpdb->get_var(
 				$wpdb->prepare(
@@ -122,8 +125,12 @@ class ProPerf_Data_Collector {
 				"SELECT COUNT(*) FROM {$wpdb->prefix}wc_orders WHERE status != 'trash'"
 			);
 		} else {
-			$oldest_order_date        = $wpdb->get_var(
+			$oldest_order_date  = $wpdb->get_var(
 				"SELECT MIN(post_date_gmt) FROM {$wpdb->posts}
+				WHERE post_type = 'shop_order' AND post_status != 'trash'"
+			);
+			$latest_order_date  = $wpdb->get_var(
+				"SELECT MAX(post_date_gmt) FROM {$wpdb->posts}
 				WHERE post_type = 'shop_order' AND post_status != 'trash'"
 			);
 			$orders_older_than_threshold = (int) $wpdb->get_var(
@@ -174,6 +181,7 @@ class ProPerf_Data_Collector {
 				'order_items_size_mb'    => $items_size ? round( floatval( $items_size ), 4 ) : 0.0,
 				'order_itemmeta_size_mb' => $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : 0.0,
 				'oldest_order_date'      => $oldest_order_date ? gmdate( 'Y-m-d', strtotime( $oldest_order_date ) ) : null,
+				'latest_order_date'      => $latest_order_date ? gmdate( 'Y-m-d', strtotime( $latest_order_date ) ) : null,
 				'orders_older_than_threshold' => $orders_older_than_threshold,
 				'total_orders'                => $total_orders,
 				'threshold_years'             => $threshold_years,
