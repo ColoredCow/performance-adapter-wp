@@ -195,7 +195,7 @@ class ProPerf_Data_Collector {
 
 	/**
 	 * Record a QET reading for baseline computation. Call after each successful push.
-	 * Stores at most one reading per calendar day.
+	 * Multiple same-day pushes are averaged into a single daily entry.
 	 *
 	 * @param int $qet_ms QET in milliseconds.
 	 */
@@ -205,12 +205,21 @@ class ProPerf_Data_Collector {
 
 		$last = ! empty( $history ) ? end( $history ) : null;
 		if ( $last && gmdate( 'Y-m-d', $last['ts'] ) === $today ) {
+			$existing_count                    = isset( $last['count'] ) ? $last['count'] : 1;
+			$new_count                         = $existing_count + 1;
+			$history[ array_key_last( $history ) ] = array(
+				'ts'    => $last['ts'],
+				'ms'    => (int) round( ( $last['ms'] * $existing_count + $qet_ms ) / $new_count ),
+				'count' => $new_count,
+			);
+			update_option( 'properf_qet_history', $history, false );
 			return;
 		}
 
 		$history[] = array(
-			'ts' => time(),
-			'ms' => (int) $qet_ms,
+			'ts'    => time(),
+			'ms'    => (int) $qet_ms,
+			'count' => 1,
 		);
 
 		if ( count( $history ) > 30 ) {
