@@ -362,10 +362,7 @@ function properf_render_dashboard() {
 					<td><strong><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></strong></td>
 					<td>
 						<?php echo $last_archival_date ? esc_html( $last_archival_date ) : esc_html__( 'Never', 'properf' ); ?>
-						<form method="post" style="display:inline; margin-left: 12px;">
-							<?php wp_nonce_field( 'properf_mark_archival_action', 'properf_mark_archival_nonce' ); ?>
-							<input type="submit" name="properf_mark_archival" class="button button-secondary" value="Mark Archival Done">
-						</form>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=properf-settings' ) ); ?>" class="button button-secondary" style="margin-left: 12px;"><?php esc_html_e( 'Update Archival Date', 'properf' ); ?></a>
 					</td>
 				</tr>
 				<tr>
