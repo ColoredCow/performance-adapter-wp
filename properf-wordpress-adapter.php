@@ -338,14 +338,12 @@ $last_sync = get_option( 'properf_bq_last_sync' );
 					<td><?php echo $oldest_date ? esc_html( $oldest_date ) : '—'; ?></td>
 				</tr>
 				<tr>
-<tr>
+					<td><strong><?php esc_html_e( 'Total Orders', 'properf' ); ?></strong></td>
+					<td><?php echo esc_html( number_format( $total_orders ) ); ?></td>
+				</tr>
+				<tr>
 					<td><strong><?php echo esc_html( sprintf( __( 'Orders Older Than %d Years', 'properf' ), $threshold_years ) ); ?></strong></td>
-					<td><?php
-					echo esc_html( number_format( $orders_older_than_threshold ) );
-					if ( $total_orders > 0 ) {
-						echo ' <span style="color:#888;font-size:0.9em;">of ' . esc_html( number_format( $total_orders ) ) . ' total</span>';
-					}
-					?></td>
+					<td><?php echo esc_html( number_format( $orders_older_than_threshold ) ); ?></td>
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></strong></td>
