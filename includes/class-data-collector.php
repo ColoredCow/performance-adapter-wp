@@ -205,13 +205,21 @@ class ProPerf_Data_Collector {
 	}
 
 	/**
-	 * Compute baseline QET from stored history.
-	 * Uses avg of first 5 post-archival readings if available, else avg of last 10.
+	 * Compute baseline QET. Locks after 10 post-archival readings once available.
+	 * Falls back to avg of 10 lowest readings from rolling history.
 	 *
 	 * @param string|null $last_archival_date Date string Y-m-d or null.
-	 * @return int|null Baseline in ms, or null if no history yet.
+	 * @return array {ms: int|null, source: string|null}
 	 */
 	private function get_baseline_qet( $last_archival_date ) {
+		$locked = get_option( 'properf_baseline_qet_ms', null );
+		if ( null !== $locked ) {
+			return array(
+				'ms'     => (int) $locked,
+				'source' => 'post-archival',
+			);
+		}
+
 		$history = get_option( 'properf_qet_history', array() );
 
 		if ( empty( $history ) ) {
@@ -229,10 +237,12 @@ class ProPerf_Data_Collector {
 				)
 			);
 
-			if ( count( $post_archival ) >= 5 ) {
-				$readings = array_slice( $post_archival, 0, 5 );
+			if ( count( $post_archival ) >= 10 ) {
+				$readings   = array_slice( $post_archival, 0, 10 );
+				$locked_ms  = (int) round( array_sum( array_column( $readings, 'ms' ) ) / 10 );
+				update_option( 'properf_baseline_qet_ms', $locked_ms, false );
 				return array(
-					'ms'     => (int) round( array_sum( array_column( $readings, 'ms' ) ) / 5 ),
+					'ms'     => $locked_ms,
 					'source' => 'post-archival',
 				);
 			}

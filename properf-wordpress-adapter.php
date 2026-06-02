@@ -633,6 +633,7 @@ add_action(
 	function ( $old, $new ) {
 		if ( $old !== $new ) {
 			update_option( 'properf_qet_history', array(), false );
+			delete_option( 'properf_baseline_qet_ms' );
 		}
 	},
 	10,
