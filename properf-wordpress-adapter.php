@@ -362,7 +362,7 @@ $last_sync = get_option( 'properf_bq_last_sync' );
 							: __( 'avg of 10 lowest readings', 'properf' );
 						echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span style="color:#888;font-size:0.9em;">(' . esc_html( $source_label ) . ')</span>';
 					} else {
-						echo esc_html__( 'Not enough data to calculate baseline yet', 'properf' );
+						echo '<span style="color:#cc1818;font-style:italic;">' . esc_html__( 'Not enough data to calculate baseline yet', 'properf' ) . '</span>';
 					}
 					?></td>
 				</tr>
