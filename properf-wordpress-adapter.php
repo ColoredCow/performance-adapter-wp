@@ -229,7 +229,8 @@ function properf_render_dashboard() {
 	$woo_metrics          = $metrics['woo'];
 	$oldest_date          = $woo_metrics['oldest_order_date'];
 
-	$orders_older_than_2y = $woo_metrics['orders_older_than_2y'];
+	$orders_older_than_threshold = $woo_metrics['orders_older_than_threshold'];
+	$threshold_years             = $woo_metrics['threshold_years'];
 	$last_archival_date   = $woo_metrics['last_archival_date'];
 	$baseline_qet_ms      = $woo_metrics['baseline_qet_ms'];
 
@@ -337,8 +338,8 @@ $last_sync = get_option( 'properf_bq_last_sync' );
 				</tr>
 				<tr>
 <tr>
-					<td><strong><?php esc_html_e( 'Orders Older Than 2 Years', 'properf' ); ?></strong></td>
-					<td><?php echo esc_html( number_format( $orders_older_than_2y ) ); ?></td>
+					<td><strong><?php echo esc_html( sprintf( __( 'Orders Older Than %d Years', 'properf' ), $threshold_years ) ); ?></strong></td>
+					<td><?php echo esc_html( number_format( $orders_older_than_threshold ) ); ?></td>
 				</tr>
 				<tr>
 					<td><strong><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></strong></td>
@@ -794,7 +795,8 @@ function properf_default_metrics() {
 			'order_items_size_mb'    => 0.0,
 			'order_itemmeta_size_mb' => 0.0,
 			'oldest_order_date'      => null,
-			'orders_older_than_2y'   => 0,
+			'orders_older_than_threshold' => 0,
+		'threshold_years'             => intval( get_option( 'properf_archival_threshold_years', 2 ) ),
 			'last_archival_date'     => null,
 			'query_execution_ms'     => 0,
 			'baseline_qet_ms'        => null,

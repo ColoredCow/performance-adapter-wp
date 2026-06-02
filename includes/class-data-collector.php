@@ -104,43 +104,57 @@ class ProPerf_Data_Collector {
 			)
 		);
 
+		$threshold_years = intval( get_option( 'properf_archival_threshold_years', 2 ) );
+
 		if ( $use_hpos ) {
-			$oldest_order_date = $wpdb->get_var(
+			$oldest_order_date        = $wpdb->get_var(
 				"SELECT MIN(date_created_gmt) FROM {$wpdb->prefix}wc_orders WHERE status != 'trash'"
 			);
-			$orders_older_than_2y = (int) $wpdb->get_var(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}wc_orders
-				WHERE date_created_gmt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL 2 YEAR)
-				AND status != 'trash'"
+			$orders_older_than_threshold = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$wpdb->prefix}wc_orders
+					WHERE date_created_gmt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL %d YEAR)
+					AND status != 'trash'",
+					$threshold_years
+				)
 			);
 		} else {
-			$oldest_order_date = $wpdb->get_var(
+			$oldest_order_date        = $wpdb->get_var(
 				"SELECT MIN(post_date_gmt) FROM {$wpdb->posts}
 				WHERE post_type = 'shop_order' AND post_status != 'trash'"
 			);
-			$orders_older_than_2y = (int) $wpdb->get_var(
-				"SELECT COUNT(*) FROM {$wpdb->posts}
-				WHERE post_date_gmt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL 2 YEAR)
-				AND post_type = 'shop_order' AND post_status != 'trash'"
+			$orders_older_than_threshold = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$wpdb->posts}
+					WHERE post_date_gmt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL %d YEAR)
+					AND post_type = 'shop_order' AND post_status != 'trash'",
+					$threshold_years
+				)
 			);
 		}
 
 		$qet_start = microtime( true );
 		if ( $use_hpos ) {
 			$wpdb->get_var(
-				"SELECT COUNT(oi.order_item_id)
-				FROM {$wpdb->prefix}woocommerce_order_items oi
-				INNER JOIN {$wpdb->prefix}wc_orders o ON o.id = oi.order_id
-				WHERE o.date_created_gmt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL 2 YEAR)"
+				$wpdb->prepare(
+					"SELECT COUNT(oi.order_item_id)
+					FROM {$wpdb->prefix}woocommerce_order_items oi
+					INNER JOIN {$wpdb->prefix}wc_orders o ON o.id = oi.order_id
+					WHERE o.date_created_gmt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL %d YEAR)",
+					$threshold_years
+				)
 			);
 		} else {
 			$wpdb->get_var(
-				"SELECT COUNT(oi.order_item_id)
-				FROM {$wpdb->prefix}woocommerce_order_items oi
-				INNER JOIN {$wpdb->posts} o ON o.ID = oi.order_id
-				WHERE o.post_date_gmt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL 2 YEAR)
-				AND o.post_type = 'shop_order'
-				AND o.post_status != 'trash'"
+				$wpdb->prepare(
+					"SELECT COUNT(oi.order_item_id)
+					FROM {$wpdb->prefix}woocommerce_order_items oi
+					INNER JOIN {$wpdb->posts} o ON o.ID = oi.order_id
+					WHERE o.post_date_gmt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL %d YEAR)
+					AND o.post_type = 'shop_order'
+					AND o.post_status != 'trash'",
+					$threshold_years
+				)
 			);
 		}
 		$query_execution_ms = (int) round( ( microtime( true ) - $qet_start ) * 1000 );
@@ -153,7 +167,8 @@ class ProPerf_Data_Collector {
 				'order_items_size_mb'    => $items_size ? round( floatval( $items_size ), 4 ) : 0.0,
 				'order_itemmeta_size_mb' => $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : 0.0,
 				'oldest_order_date'      => $oldest_order_date ? gmdate( 'Y-m-d', strtotime( $oldest_order_date ) ) : null,
-				'orders_older_than_2y'   => $orders_older_than_2y,
+				'orders_older_than_threshold' => $orders_older_than_threshold,
+				'threshold_years'             => $threshold_years,
 				'last_archival_date'     => $last_archival_date,
 				'query_execution_ms'     => $query_execution_ms,
 				'baseline_qet_ms'        => $baseline['ms'],
@@ -250,7 +265,7 @@ class ProPerf_Data_Collector {
 			'woo_order_items_size_mb'    => $metrics['woo']['order_items_size_mb'],
 			'woo_order_itemmeta_size_mb' => $metrics['woo']['order_itemmeta_size_mb'],
 			'woo_oldest_order_date'      => $metrics['woo']['oldest_order_date'],
-			'woo_orders_older_than_2y'   => $metrics['woo']['orders_older_than_2y'],
+			'woo_orders_older_than_threshold' => $metrics['woo']['orders_older_than_threshold'],
 			'woo_last_archival_date'     => $metrics['woo']['last_archival_date'],
 			'woo_query_execution_ms'     => $metrics['woo']['query_execution_ms'],
 			'woo_baseline_qet_ms'        => $metrics['woo']['baseline_qet_ms'],
