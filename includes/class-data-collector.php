@@ -118,6 +118,9 @@ class ProPerf_Data_Collector {
 					$threshold_years
 				)
 			);
+			$total_orders = (int) $wpdb->get_var(
+				"SELECT COUNT(*) FROM {$wpdb->prefix}wc_orders WHERE status != 'trash'"
+			);
 		} else {
 			$oldest_order_date        = $wpdb->get_var(
 				"SELECT MIN(post_date_gmt) FROM {$wpdb->posts}
@@ -130,6 +133,10 @@ class ProPerf_Data_Collector {
 					AND post_type = 'shop_order' AND post_status != 'trash'",
 					$threshold_years
 				)
+			);
+			$total_orders = (int) $wpdb->get_var(
+				"SELECT COUNT(*) FROM {$wpdb->posts}
+				WHERE post_type = 'shop_order' AND post_status != 'trash'"
 			);
 		}
 
@@ -168,6 +175,7 @@ class ProPerf_Data_Collector {
 				'order_itemmeta_size_mb' => $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : 0.0,
 				'oldest_order_date'      => $oldest_order_date ? gmdate( 'Y-m-d', strtotime( $oldest_order_date ) ) : null,
 				'orders_older_than_threshold' => $orders_older_than_threshold,
+				'total_orders'                => $total_orders,
 				'threshold_years'             => $threshold_years,
 				'last_archival_date'     => $last_archival_date,
 				'query_execution_ms'     => $query_execution_ms,
