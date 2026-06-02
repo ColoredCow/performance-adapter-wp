@@ -246,6 +246,14 @@ class ProPerf_Data_Collector {
 					'source' => 'post-archival',
 				);
 			}
+
+			if ( ! empty( $post_archival ) ) {
+				$all_ms = array_column( $post_archival, 'ms' );
+				return array(
+					'ms'     => (int) round( array_sum( $all_ms ) / count( $all_ms ) ),
+					'source' => 'post-archival-pending:' . count( $post_archival ),
+				);
+			}
 		}
 
 		$all_ms = array_column( $history, 'ms' );
