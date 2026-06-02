@@ -228,16 +228,12 @@ function properf_render_dashboard() {
 
 	$woo_metrics          = $metrics['woo'];
 	$oldest_date          = $woo_metrics['oldest_order_date'];
-	$oldest_age_days      = null;
+
 	$orders_older_than_2y = $woo_metrics['orders_older_than_2y'];
 	$last_archival_date   = $woo_metrics['last_archival_date'];
 	$baseline_qet_ms      = $woo_metrics['baseline_qet_ms'];
 
-	if ( $oldest_date ) {
-		$oldest_age_days = (int) floor( ( time() - strtotime( $oldest_date ) ) / DAY_IN_SECONDS );
-	}
-
-	$last_sync = get_option( 'properf_bq_last_sync' );
+$last_sync = get_option( 'properf_bq_last_sync' );
 
 	if ( $last_sync ) {
 		$format     = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
@@ -340,10 +336,7 @@ function properf_render_dashboard() {
 					<td><?php echo $oldest_date ? esc_html( $oldest_date ) : '—'; ?></td>
 				</tr>
 				<tr>
-					<td><strong><?php esc_html_e( 'Oldest Order Age', 'properf' ); ?></strong></td>
-					<td><?php echo null !== $oldest_age_days ? esc_html( number_format( $oldest_age_days ) . ' days' ) : '—'; ?></td>
-				</tr>
-				<tr>
+<tr>
 					<td><strong><?php esc_html_e( 'Orders Older Than 2 Years', 'properf' ); ?></strong></td>
 					<td><?php echo esc_html( number_format( $orders_older_than_2y ) ); ?></td>
 				</tr>
