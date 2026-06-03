@@ -236,7 +236,7 @@ function properf_render_dashboard() {
 	$last_archival_date   = $woo_metrics['last_archival_date'];
 	$baseline_qet_ms      = $woo_metrics['baseline_qet_ms'];
 
-$last_sync = get_option( 'properf_bq_last_sync' );
+	$last_sync = get_option( 'properf_bq_last_sync' );
 
 	if ( $last_sync ) {
 		$format     = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );

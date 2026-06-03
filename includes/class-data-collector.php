@@ -252,7 +252,7 @@ class ProPerf_Data_Collector {
 		}
 
 		if ( $last_archival_date ) {
-			$archival_ts   = strtotime( $last_archival_date );
+			$archival_ts   = strtotime( $last_archival_date . ' UTC' );
 			$post_archival = array_values(
 				array_filter(
 					$history,
