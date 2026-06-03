@@ -57,6 +57,7 @@ function properf_handle_bigquery_push() {
 
 		$collector = new ProPerf_Data_Collector();
 		$metrics   = $collector->get_data();
+		$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
 		$bq_client = new ProPerf_BigQuery_Client();
 
 		$success = $bq_client->push_metrics( $metrics );
@@ -66,7 +67,6 @@ function properf_handle_bigquery_push() {
 		update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
 
 		if ( $success ) {
-			$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
 			delete_option( 'properf_bq_last_sync_error' );
 			add_settings_error(
 				'properf_messages',
@@ -123,6 +123,7 @@ function properf_collect_and_push_metrics() {
 
 	$collector = new ProPerf_Data_Collector();
 	$metrics   = $collector->get_data();
+	$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
 	$bq_client = new ProPerf_BigQuery_Client();
 
 	$success = $bq_client->push_metrics( $metrics );
@@ -132,7 +133,6 @@ function properf_collect_and_push_metrics() {
 	update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
 
 	if ( $success ) {
-		$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
 		delete_option( 'properf_bq_last_sync_error' );
 		error_log(
 			'ProPerf: Metrics successfully pushed to BigQuery at ' . gmdate( 'Y-m-d H:i:s' )
