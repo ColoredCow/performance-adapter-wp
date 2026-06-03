@@ -76,6 +76,24 @@ class ProPerf_Data_Collector {
 	 * @return array WooCommerce order metrics.
 	 */
 	public function collect_woo_order_metrics() {
+		if ( ! function_exists( 'WC' ) ) {
+			return array(
+				'woo' => array(
+					'order_items_size_mb'         => null,
+					'order_itemmeta_size_mb'       => null,
+					'oldest_order_date'            => null,
+					'latest_order_date'            => null,
+					'orders_older_than_threshold'  => null,
+					'total_orders'                 => null,
+					'threshold_years'              => intval( get_option( 'properf_archival_threshold_years', 2 ) ),
+					'last_archival_date'           => null,
+					'query_execution_ms'           => null,
+					'baseline_qet_ms'              => null,
+					'baseline_qet_source'          => null,
+				),
+			);
+		}
+
 		global $wpdb;
 
 		$db_name  = DB_NAME;
@@ -200,6 +218,10 @@ class ProPerf_Data_Collector {
 	 * @param int $qet_ms QET in milliseconds.
 	 */
 	public function record_qet_reading( $qet_ms ) {
+		if ( null === $qet_ms ) {
+			return;
+		}
+
 		$today   = gmdate( 'Y-m-d' );
 		$history = get_option( 'properf_qet_history', array() );
 
