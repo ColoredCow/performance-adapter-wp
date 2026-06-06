@@ -334,6 +334,7 @@ class ProPerf_Data_Collector {
 			'woo_order_items_size_mb'    => $metrics['woo']['order_items_size_mb'],
 			'woo_order_itemmeta_size_mb' => $metrics['woo']['order_itemmeta_size_mb'],
 			'woo_oldest_order_date'      => $metrics['woo']['oldest_order_date'],
+			'woo_latest_order_date'      => $metrics['woo']['latest_order_date'],
 			'woo_orders_older_than_threshold' => $metrics['woo']['orders_older_than_threshold'],
 			'woo_last_archival_date'     => $metrics['woo']['last_archival_date'],
 			'woo_query_execution_ms'     => $metrics['woo']['query_execution_ms'],

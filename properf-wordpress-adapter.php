@@ -822,7 +822,7 @@ function properf_default_metrics() {
 			'latest_order_date'      => null,
 			'orders_older_than_threshold' => 0,
 			'total_orders'                => 0,
-		'threshold_years'             => intval( get_option( 'properf_archival_threshold_years', 2 ) ),
+			'threshold_years'             => intval( get_option( 'properf_archival_threshold_years', 2 ) ),
 			'last_archival_date'     => null,
 			'query_execution_ms'     => 0,
 			'baseline_qet_ms'        => null,
