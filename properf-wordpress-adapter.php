@@ -318,6 +318,7 @@ function properf_render_dashboard() {
 		<?php endif; ?>
 
 		<h2 style="margin-top: 30px;"><?php esc_html_e( 'WooCommerce Order Metrics', 'properf' ); ?></h2>
+		<?php if ( function_exists( 'WC' ) ) : ?>
 		<table class="widefat striped">
 			<thead>
 				<tr>
@@ -387,6 +388,9 @@ function properf_render_dashboard() {
 				</tr>
 			</tbody>
 		</table>
+		<?php else : ?>
+			<p><?php esc_html_e( 'WooCommerce is not active on this site.', 'properf' ); ?></p>
+		<?php endif; ?>
 	</div>
 <?php
 }
