@@ -215,6 +215,10 @@ class ProPerf_Data_Collector {
 	 * Record a QET reading for baseline computation. Call after each successful push.
 	 * Multiple same-day pushes are averaged into a single daily entry.
 	 *
+	 * Note: concurrent pushes (e.g. cron mid-run + manual click) can both read
+	 * properf_qet_history and overwrite each other — WP options have no atomic update.
+	 * Low risk at daily cron frequency; revisit if cron is raised.
+	 *
 	 * @param int $qet_ms QET in milliseconds.
 	 */
 	public function record_qet_reading( $qet_ms ) {
