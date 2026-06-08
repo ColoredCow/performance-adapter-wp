@@ -199,8 +199,8 @@ class ProPerf_Data_Collector {
 			'woo' => array(
 				'order_items_size_mb'    => $items_size ? round( floatval( $items_size ), 4 ) : 0.0,
 				'order_itemmeta_size_mb' => $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : 0.0,
-				'oldest_order_date'      => $oldest_order_date ? gmdate( 'Y-m-d', strtotime( $oldest_order_date ) ) : null,
-				'latest_order_date'      => $latest_order_date ? gmdate( 'Y-m-d', strtotime( $latest_order_date ) ) : null,
+				'oldest_order_date'      => $oldest_order_date ? gmdate( 'Y-m-d', strtotime( $oldest_order_date . ' UTC' ) ) : null,
+				'latest_order_date'      => $latest_order_date ? gmdate( 'Y-m-d', strtotime( $latest_order_date . ' UTC' ) ) : null,
 				'orders_older_than_threshold' => $orders_older_than_threshold,
 				'total_orders'                => $total_orders,
 				'threshold_years'             => $threshold_years,
