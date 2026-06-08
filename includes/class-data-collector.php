@@ -234,7 +234,7 @@ class ProPerf_Data_Collector {
 		if ( $last && gmdate( 'Y-m-d', $last['ts'] ) === $today ) {
 			$existing_count                    = isset( $last['count'] ) ? $last['count'] : 1;
 			$new_count                         = $existing_count + 1;
-			$history[ array_key_last( $history ) ] = array(
+			$history[ count( $history ) - 1 ] = array(
 				'ts'    => $last['ts'],
 				'ms'    => (int) round( ( $last['ms'] * $existing_count + $qet_ms ) / $new_count ),
 				'count' => $new_count,
