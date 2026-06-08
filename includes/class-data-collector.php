@@ -172,7 +172,8 @@ class ProPerf_Data_Collector {
 					"SELECT COUNT(oi.order_item_id)
 					FROM {$wpdb->prefix}woocommerce_order_items oi
 					INNER JOIN {$wpdb->prefix}wc_orders o ON o.id = oi.order_id
-					WHERE o.date_created_gmt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL %d YEAR)",
+					WHERE o.date_created_gmt < DATE_SUB(UTC_TIMESTAMP(), INTERVAL %d YEAR)
+					AND o.status != 'trash'",
 					$threshold_years
 				)
 			);
