@@ -369,12 +369,12 @@ function properf_render_dashboard() {
 						$baseline_qet_source = $woo_metrics['baseline_qet_source'];
 						if ( 'post-archival' === $baseline_qet_source ) {
 							$source_label = __( 'stable baseline', 'properf' );
-						} elseif ( str_starts_with( $baseline_qet_source ?? '', 'post-archival-pending:' ) ) {
+						} elseif ( 0 === strpos( $baseline_qet_source ?? '', 'post-archival-pending:' ) ) {
 							$count        = (int) explode( ':', $baseline_qet_source )[1];
 							/* translators: %d = number of days of data collected so far out of 10 */
 							$source_label = sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $count );
 						} else {
-							$count        = str_starts_with( $baseline_qet_source ?? '', 'lowest-10:' )
+							$count        = ( 0 === strpos( $baseline_qet_source ?? '', 'lowest-10:' ) )
 								? (int) explode( ':', $baseline_qet_source )[1]
 								: 10;
 							/* translators: %d = number of daily readings used */
