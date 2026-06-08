@@ -56,9 +56,11 @@ function properf_handle_bigquery_push() {
 		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
 
 		$collector = new ProPerf_Data_Collector();
+		$metrics   = $collector->get_data();
+		$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
 		$bq_client = new ProPerf_BigQuery_Client();
 
-		$success = $bq_client->push_metrics( $collector->get_data() );
+		$success = $bq_client->push_metrics( $metrics );
 
 		// Persist execution info (shared with cron)
 		update_option( 'properf_bq_last_sync', time(), false );
@@ -120,9 +122,11 @@ function properf_collect_and_push_metrics() {
 	require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
 
 	$collector = new ProPerf_Data_Collector();
+	$metrics   = $collector->get_data();
+	$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
 	$bq_client = new ProPerf_BigQuery_Client();
 
-	$success = $bq_client->push_metrics( $collector->get_data() );
+	$success = $bq_client->push_metrics( $metrics );
 
 	// Persist cron execution info.
 	update_option( 'properf_bq_last_sync', time(), false );
@@ -222,13 +226,15 @@ function properf_render_dashboard() {
 	$size_bytes    = $autoloaded_data_metrics['size_bytes'];
 	$top_size_keys = $autoloaded_data_metrics['top_size_keys'];
 
-	$woo_metrics     = $metrics['woo'];
-	$oldest_date     = $woo_metrics['oldest_order_date'];
-	$oldest_age_days = null;
+	$woo_metrics          = $metrics['woo'];
+	$oldest_date          = $woo_metrics['oldest_order_date'];
+	$latest_date          = $woo_metrics['latest_order_date'];
 
-	if ( $oldest_date ) {
-		$oldest_age_days = (int) floor( ( time() - strtotime( $oldest_date ) ) / DAY_IN_SECONDS );
-	}
+	$orders_older_than_threshold = $woo_metrics['orders_older_than_threshold'];
+	$total_orders                = $woo_metrics['total_orders'];
+	$threshold_years             = $woo_metrics['threshold_years'];
+	$last_archival_date   = $woo_metrics['last_archival_date'];
+	$baseline_qet_ms      = $woo_metrics['baseline_qet_ms'];
 
 	$last_sync = get_option( 'properf_bq_last_sync' );
 
@@ -312,6 +318,7 @@ function properf_render_dashboard() {
 		<?php endif; ?>
 
 		<h2 style="margin-top: 30px;"><?php esc_html_e( 'WooCommerce Order Metrics', 'properf' ); ?></h2>
+		<?php if ( function_exists( 'WC' ) ) : ?>
 		<table class="widefat striped">
 			<thead>
 				<tr>
@@ -333,11 +340,57 @@ function properf_render_dashboard() {
 					<td><?php echo $oldest_date ? esc_html( $oldest_date ) : '—'; ?></td>
 				</tr>
 				<tr>
-					<td><strong><?php esc_html_e( 'Oldest Order Age', 'properf' ); ?></strong></td>
-					<td><?php echo null !== $oldest_age_days ? esc_html( number_format( $oldest_age_days ) . ' days' ) : '—'; ?></td>
+					<td><strong><?php esc_html_e( 'Latest Order Date', 'properf' ); ?></strong></td>
+					<td><?php echo $latest_date ? esc_html( $latest_date ) : '—'; ?></td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Total Orders', 'properf' ); ?></strong></td>
+					<td><?php echo esc_html( number_format( $total_orders ) ); ?></td>
+				</tr>
+				<tr>
+					<td><strong><?php echo esc_html( sprintf( __( 'Orders Older Than %d Years', 'properf' ), $threshold_years ) ); ?></strong></td>
+					<td><?php echo esc_html( number_format( $orders_older_than_threshold ) ); ?></td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></strong></td>
+					<td>
+						<?php echo $last_archival_date ? esc_html( $last_archival_date ) : esc_html__( 'Never', 'properf' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=properf-settings' ) ); ?>" class="button button-secondary" style="margin-left: 12px;"><?php esc_html_e( 'Update Archival Date', 'properf' ); ?></a>
+					</td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Current Query Execution Time', 'properf' ); ?></strong></td>
+					<td><?php echo esc_html( $woo_metrics['query_execution_ms'] . ' ms' ); ?></td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Baseline Query Execution Time', 'properf' ); ?></strong></td>
+					<td><?php
+					if ( null !== $baseline_qet_ms ) {
+						$baseline_qet_source = $woo_metrics['baseline_qet_source'];
+						if ( 'post-archival' === $baseline_qet_source ) {
+							$source_label = __( 'stable baseline', 'properf' );
+						} elseif ( 0 === strpos( $baseline_qet_source ?? '', 'post-archival-pending:' ) ) {
+							$count        = (int) explode( ':', $baseline_qet_source )[1];
+							/* translators: %d = number of days of data collected so far out of 10 */
+							$source_label = sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $count );
+						} else {
+							$count        = ( 0 === strpos( $baseline_qet_source ?? '', 'lowest-10:' ) )
+								? (int) explode( ':', $baseline_qet_source )[1]
+								: 10;
+							/* translators: %d = number of daily readings used */
+							$source_label = sprintf( __( 'based on %d days of data', 'properf' ), $count );
+						}
+						echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span style="color:#888;font-size:0.9em;">(' . esc_html( $source_label ) . ')</span>';
+					} else {
+						echo '<span style="color:#cc1818;font-style:italic;">' . esc_html__( 'Not enough data to calculate baseline yet', 'properf' ) . '</span>';
+					}
+					?></td>
 				</tr>
 			</tbody>
 		</table>
+		<?php else : ?>
+			<p><?php esc_html_e( 'WooCommerce is not active on this site.', 'properf' ); ?></p>
+		<?php endif; ?>
 	</div>
 <?php
 }
@@ -603,6 +656,7 @@ add_action(
 	function ( $old, $new ) {
 		if ( $old !== $new ) {
 			update_option( 'properf_qet_history', array(), false );
+			delete_option( 'properf_baseline_qet_ms' );
 		}
 	},
 	10,
@@ -765,6 +819,14 @@ function properf_default_metrics() {
 			'order_items_size_mb'    => 0.0,
 			'order_itemmeta_size_mb' => 0.0,
 			'oldest_order_date'      => null,
+			'latest_order_date'      => null,
+			'orders_older_than_threshold' => 0,
+			'total_orders'                => 0,
+			'threshold_years'             => intval( get_option( 'properf_archival_threshold_years', 2 ) ),
+			'last_archival_date'     => null,
+			'query_execution_ms'     => 0,
+			'baseline_qet_ms'        => null,
+			'baseline_qet_source'    => null,
 		),
 	);
 }
