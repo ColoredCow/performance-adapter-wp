@@ -121,7 +121,7 @@ class ProPerf_Admin_Dashboard {
 				add_settings_error(
 					'properf_messages',
 					'properf_push_error',
-					__( 'Failed: ', 'properf' ) . $push_notice['message'],
+					__( 'Failed: ', 'properf' ) . esc_html( $push_notice['message'] ),
 					'error'
 				);
 			}

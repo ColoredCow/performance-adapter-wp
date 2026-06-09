@@ -46,8 +46,10 @@ register_deactivation_hook( __FILE__, 'properf_deactivate_plugin' );
  * Initialize plugin — wire admin dashboard and settings.
  */
 function properf_init() {
-	ProPerf_Admin_Dashboard::init();
-	ProPerf_Admin_Settings::init();
+	if ( is_admin() ) {
+		ProPerf_Admin_Dashboard::init();
+		ProPerf_Admin_Settings::init();
+	}
 }
 add_action( 'plugins_loaded', 'properf_init' );
 
