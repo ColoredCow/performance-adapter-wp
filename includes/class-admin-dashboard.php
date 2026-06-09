@@ -107,6 +107,11 @@ class ProPerf_Admin_Dashboard {
 	 * Show settings-saved notice after settings form is submitted.
 	 */
 	public static function handle_settings_notices() {
+		$page = isset( $_GET['page'] ) ? $_GET['page'] : '';
+		if ( 'properf' !== $page && 'properf-settings' !== $page ) {
+			return;
+		}
+
 		$push_notice = get_transient( 'properf_push_notice_' . get_current_user_id() );
 		if ( $push_notice ) {
 			delete_transient( 'properf_push_notice_' . get_current_user_id() );
