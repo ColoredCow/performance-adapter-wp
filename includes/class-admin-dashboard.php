@@ -21,6 +21,19 @@ class ProPerf_Admin_Dashboard {
 		add_action( 'admin_menu', array( __CLASS__, 'add_admin_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'handle_bigquery_push' ) );
 		add_action( 'admin_init', array( __CLASS__, 'handle_settings_notices' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
+	}
+
+	/**
+	 * Enqueue admin stylesheet on ProPerf pages.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public static function enqueue_admin_assets( $hook ) {
+		if ( 'toplevel_page_properf' !== $hook && 'properf_page_properf-settings' !== $hook ) {
+			return;
+		}
+		wp_enqueue_style( 'properf-admin', PROPERF_URL . 'assets/css/admin.css', array(), PROPERF_VERSION );
 	}
 
 	/**
@@ -60,9 +73,10 @@ class ProPerf_Admin_Dashboard {
 	 * Handle manual BigQuery push form submission.
 	 */
 	public static function handle_bigquery_push() {
-		if ( ! isset( $_POST['properf_push_to_bq'] ) || ! check_admin_referer( 'properf_push_action', 'properf_push_nonce' ) ) {
+		if ( ! isset( $_POST['properf_push_to_bq'] ) ) {
 			return;
 		}
+		check_admin_referer( 'properf_push_action', 'properf_push_nonce' );
 
 		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
 
@@ -174,7 +188,7 @@ class ProPerf_Admin_Dashboard {
 
 			<?php settings_errors( 'properf_messages' ); ?>
 
-			<form method="post" style="margin-bottom: 20px;">
+			<form method="post" class="properf-push-form">
 				<?php wp_nonce_field( 'properf_push_action', 'properf_push_nonce' ); ?>
 				<input type="submit" name="properf_push_to_bq" class="button button-primary" value="<?php esc_attr_e( 'Push to BigQuery', 'properf' ); ?>">
 			</form>
@@ -190,7 +204,7 @@ class ProPerf_Admin_Dashboard {
 				<tbody>
 					<tr>
 						<td><strong><?php esc_html_e( 'Autoloaded Option Count', 'properf' ); ?></strong></td>
-						<td><?php echo esc_html( number_format( $autoload_count ) ); ?></td>
+						<td><?php echo esc_html( is_numeric( $autoload_count ) ? number_format( (int) $autoload_count ) : $autoload_count ); ?></td>
 					</tr>
 					<tr>
 						<td><strong><?php esc_html_e( 'Autoloaded Option Size', 'properf' ); ?></strong></td>
@@ -199,7 +213,7 @@ class ProPerf_Admin_Dashboard {
 				</tbody>
 			</table>
 
-			<h2 style="margin-top: 30px;"><?php esc_html_e( 'Top 10 Autoloaded Options by Size', 'properf' ); ?></h2>
+			<h2 class="properf-section-heading"><?php esc_html_e( 'Top 10 Autoloaded Options by Size', 'properf' ); ?></h2>
 			<?php if ( ! empty( $top_size_keys ) ) : ?>
 				<table class="widefat striped">
 					<thead>
@@ -221,7 +235,7 @@ class ProPerf_Admin_Dashboard {
 				<p><?php esc_html_e( 'No autoloaded option keys found or an error occurred.', 'properf' ); ?></p>
 			<?php endif; ?>
 
-			<h2 style="margin-top: 30px;"><?php esc_html_e( 'WooCommerce Order Metrics', 'properf' ); ?></h2>
+			<h2 class="properf-section-heading"><?php esc_html_e( 'WooCommerce Order Metrics', 'properf' ); ?></h2>
 			<?php if ( function_exists( 'WC' ) ) : ?>
 				<table class="widefat striped">
 					<thead>
@@ -259,7 +273,7 @@ class ProPerf_Admin_Dashboard {
 							<td><strong><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></strong></td>
 							<td>
 								<?php echo $last_archival_date ? esc_html( $last_archival_date ) : esc_html__( 'Never', 'properf' ); ?>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=properf-settings' ) ); ?>" class="button button-secondary" style="margin-left: 12px;"><?php esc_html_e( 'Update Archival Date', 'properf' ); ?></a>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=properf-settings' ) ); ?>" class="button button-secondary properf-update-link"><?php esc_html_e( 'Update Archival Date', 'properf' ); ?></a>
 							</td>
 						</tr>
 						<tr>
@@ -284,9 +298,9 @@ class ProPerf_Admin_Dashboard {
 									/* translators: %d = number of daily readings used */
 									$source_label = sprintf( __( 'based on %d days of data', 'properf' ), $days );
 								}
-								echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span style="color:#888;font-size:0.9em;">(' . esc_html( $source_label ) . ')</span>';
+								echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span class="properf-baseline-source">(' . esc_html( $source_label ) . ')</span>';
 							} else {
-								echo '<span style="color:#cc1818;font-style:italic;">' . esc_html__( 'Not enough data to calculate baseline yet', 'properf' ) . '</span>';
+								echo '<span class="properf-baseline-unavailable">' . esc_html__( 'Not enough data to calculate baseline yet', 'properf' ) . '</span>';
 							}
 							?></td>
 						</tr>

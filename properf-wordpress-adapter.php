@@ -111,8 +111,8 @@ function properf_get_next_midnight() {
 		}
 	}
 
-	$target_tz      = new DateTimeZone( $tz );
-	$now            = new DateTime( 'now', $target_tz );
+	$target_tz    = new DateTimeZone( $tz );
+	$now          = new DateTime( 'now', $target_tz );
 	$today_midnight = new DateTime( '00:00:00', $target_tz );
 
 	if ( $today_midnight <= $now ) {
