@@ -20,25 +20,28 @@ class ProPerf_Admin_Settings {
 	public static function init() {
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ), 20 );
 		add_filter( 'wp_redirect', array( __CLASS__, 'settings_redirect' ) );
+		add_action( 'update_option_properf_last_archival_date', array( __CLASS__, 'reset_qet_on_archival_change' ), 10, 2 );
+	}
 
-		// Reset QET history when archival date changes so baseline recomputes from post-archival state.
-		add_action(
-			'update_option_properf_last_archival_date',
-			function ( $old, $new ) {
-				if ( $old !== $new ) {
-					update_option( 'properf_qet_history', array(), false );
-					delete_option( 'properf_baseline_qet_ms' );
-				}
-			},
-			10,
-			2
-		);
+	/**
+	 * Reset QET history when archival date changes so baseline recomputes from post-archival state.
+	 *
+	 * @param string $old Previous value.
+	 * @param string $new New value.
+	 */
+	public static function reset_qet_on_archival_change( $old, $new ) {
+		if ( $old !== $new ) {
+			update_option( 'properf_qet_history', array(), false );
+			delete_option( 'properf_baseline_qet_ms' );
+		}
 	}
 
 	/**
 	 * Register plugin settings, sections, and fields.
 	 */
 	public static function register_settings() {
+		// --- Register all settings first ---
+
 		register_setting(
 			'properf_bigquery_settings',
 			'properf_bigquery_project_id',
@@ -89,12 +92,43 @@ class ProPerf_Admin_Settings {
 			)
 		);
 
+		register_setting(
+			'properf_bigquery_settings',
+			'properf_archival_threshold_years',
+			array(
+				'type'              => 'integer',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_threshold_years' ),
+				'default'           => 2,
+			)
+		);
+
+		register_setting(
+			'properf_bigquery_settings',
+			'properf_last_archival_date',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_archival_date' ),
+				'default'           => '',
+			)
+		);
+
+		// --- Register sections ---
+
 		add_settings_section(
 			'properf_bigquery_section',
 			__( 'BigQuery Configuration', 'properf' ),
 			array( __CLASS__, 'bigquery_section_callback' ),
 			'properf-settings'
 		);
+
+		add_settings_section(
+			'properf_woo_section',
+			__( 'WooCommerce Settings', 'properf' ),
+			array( __CLASS__, 'woo_section_callback' ),
+			'properf-settings'
+		);
+
+		// --- Register fields ---
 
 		add_settings_field(
 			'properf_bigquery_project_id',
@@ -134,33 +168,6 @@ class ProPerf_Admin_Settings {
 			array( __CLASS__, 'bigquery_private_key_field' ),
 			'properf-settings',
 			'properf_bigquery_section'
-		);
-
-		register_setting(
-			'properf_bigquery_settings',
-			'properf_archival_threshold_years',
-			array(
-				'type'              => 'integer',
-				'sanitize_callback' => array( __CLASS__, 'sanitize_threshold_years' ),
-				'default'           => 2,
-			)
-		);
-
-		register_setting(
-			'properf_bigquery_settings',
-			'properf_last_archival_date',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => array( __CLASS__, 'sanitize_archival_date' ),
-				'default'           => '',
-			)
-		);
-
-		add_settings_section(
-			'properf_woo_section',
-			__( 'WooCommerce Settings', 'properf' ),
-			array( __CLASS__, 'woo_section_callback' ),
-			'properf-settings'
 		);
 
 		add_settings_field(
@@ -318,7 +325,7 @@ class ProPerf_Admin_Settings {
 	 */
 	public static function render_settings() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'Unauthorized' );
+			wp_die( esc_html__( 'Unauthorized', 'properf' ) );
 		}
 		?>
 		<div class="wrap">

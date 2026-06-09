@@ -20,6 +20,7 @@ class ProPerf_Admin_Dashboard {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_admin_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'handle_bigquery_push' ) );
+		add_action( 'admin_init', array( __CLASS__, 'handle_settings_notices' ) );
 	}
 
 	/**
@@ -56,43 +57,50 @@ class ProPerf_Admin_Dashboard {
 	}
 
 	/**
-	 * Handle manual BigQuery push form submission and settings-saved notice.
+	 * Handle manual BigQuery push form submission.
 	 */
 	public static function handle_bigquery_push() {
-		if ( isset( $_POST['properf_push_to_bq'] ) && check_admin_referer( 'properf_push_action', 'properf_push_nonce' ) ) {
-			require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
-
-			$collector = new ProPerf_Data_Collector();
-			$metrics   = $collector->get_data();
-			$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
-			$bq_client = new ProPerf_BigQuery_Client();
-
-			$success = $bq_client->push_metrics( $metrics );
-
-			update_option( 'properf_bq_last_sync', time(), false );
-			update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
-
-			if ( $success ) {
-				delete_option( 'properf_bq_last_sync_error' );
-				add_settings_error(
-					'properf_messages',
-					'properf_msg',
-					'Data successfully pushed to BigQuery!',
-					'updated'
-				);
-			} else {
-				$error_message = $bq_client->get_last_error();
-				update_option( 'properf_bq_last_sync_error', $error_message, false );
-
-				add_settings_error(
-					'properf_messages',
-					'properf_msg',
-					'Failed: ' . $error_message,
-					'error'
-				);
-			}
+		if ( ! isset( $_POST['properf_push_to_bq'] ) || ! check_admin_referer( 'properf_push_action', 'properf_push_nonce' ) ) {
+			return;
 		}
 
+		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
+
+		$collector = new ProPerf_Data_Collector();
+		$metrics   = $collector->get_data();
+		$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
+		$bq_client = new ProPerf_BigQuery_Client();
+
+		$success = $bq_client->push_metrics( $metrics );
+
+		update_option( 'properf_bq_last_sync', time(), false );
+		update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
+
+		if ( $success ) {
+			delete_option( 'properf_bq_last_sync_error' );
+			add_settings_error(
+				'properf_messages',
+				'properf_msg',
+				__( 'Data successfully pushed to BigQuery!', 'properf' ),
+				'updated'
+			);
+		} else {
+			$error_message = $bq_client->get_last_error();
+			update_option( 'properf_bq_last_sync_error', $error_message, false );
+
+			add_settings_error(
+				'properf_messages',
+				'properf_msg',
+				'Failed: ' . $error_message,
+				'error'
+			);
+		}
+	}
+
+	/**
+	 * Show settings-saved notice after settings form is submitted.
+	 */
+	public static function handle_settings_notices() {
 		if (
 			isset( $_GET['settings-updated'] ) &&
 			isset( $_GET['page'] ) &&
@@ -112,7 +120,7 @@ class ProPerf_Admin_Dashboard {
 	 */
 	public static function render_dashboard() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'Unauthorized' );
+			wp_die( esc_html__( 'Unauthorized', 'properf' ) );
 		}
 
 		$metrics                 = ProPerf_Live_Data::get_live_data();
@@ -156,19 +164,19 @@ class ProPerf_Admin_Dashboard {
 
 			$last_pushed_display = $sync_time . ' (' . $tz_display . ')';
 		} else {
-			$last_pushed_display = 'Never';
+			$last_pushed_display = __( 'Never', 'properf' );
 		}
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'ProPerf WordPress Metrics', 'properf' ); ?></h1>
 
-			<p><strong>Last pushed to BigQuery:</strong> <?php echo esc_html( $last_pushed_display ); ?></p>
+			<p><strong><?php esc_html_e( 'Last pushed to BigQuery:', 'properf' ); ?></strong> <?php echo esc_html( $last_pushed_display ); ?></p>
 
 			<?php settings_errors( 'properf_messages' ); ?>
 
 			<form method="post" style="margin-bottom: 20px;">
 				<?php wp_nonce_field( 'properf_push_action', 'properf_push_nonce' ); ?>
-				<input type="submit" name="properf_push_to_bq" class="button button-primary" value="Push to BigQuery">
+				<input type="submit" name="properf_push_to_bq" class="button button-primary" value="<?php esc_attr_e( 'Push to BigQuery', 'properf' ); ?>">
 			</form>
 
 			<h2><?php esc_html_e( 'Summary Metrics', 'properf' ); ?></h2>
@@ -186,7 +194,7 @@ class ProPerf_Admin_Dashboard {
 					</tr>
 					<tr>
 						<td><strong><?php esc_html_e( 'Autoloaded Option Size', 'properf' ); ?></strong></td>
-						<td><?php printf( '%.2f KB', $size_bytes / 1024 ); ?></td>
+						<td><?php echo esc_html( sprintf( '%.2f KB', $size_bytes / 1024 ) ); ?></td>
 					</tr>
 				</tbody>
 			</table>
@@ -204,7 +212,7 @@ class ProPerf_Admin_Dashboard {
 						<?php foreach ( $top_size_keys as $key => $size ) : ?>
 							<tr>
 								<td><?php echo esc_html( $key ); ?></td>
-								<td><?php printf( '%.2f KB', $size / 1024 ); ?></td>
+								<td><?php echo esc_html( sprintf( '%.2f KB', $size / 1024 ) ); ?></td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
@@ -215,75 +223,75 @@ class ProPerf_Admin_Dashboard {
 
 			<h2 style="margin-top: 30px;"><?php esc_html_e( 'WooCommerce Order Metrics', 'properf' ); ?></h2>
 			<?php if ( function_exists( 'WC' ) ) : ?>
-			<table class="widefat striped">
-				<thead>
-					<tr>
-						<th><?php esc_html_e( 'Metric', 'properf' ); ?></th>
-						<th><?php esc_html_e( 'Value', 'properf' ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td><strong><?php esc_html_e( 'Order Items Table Size', 'properf' ); ?></strong></td>
-						<td><?php echo esc_html( number_format( $woo_metrics['order_items_size_mb'], 2 ) . ' MB' ); ?></td>
-					</tr>
-					<tr>
-						<td><strong><?php esc_html_e( 'Order Itemmeta Table Size', 'properf' ); ?></strong></td>
-						<td><?php echo esc_html( number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ) . ' MB' ); ?></td>
-					</tr>
-					<tr>
-						<td><strong><?php esc_html_e( 'Oldest Order Date', 'properf' ); ?></strong></td>
-						<td><?php echo $oldest_date ? esc_html( $oldest_date ) : '—'; ?></td>
-					</tr>
-					<tr>
-						<td><strong><?php esc_html_e( 'Latest Order Date', 'properf' ); ?></strong></td>
-						<td><?php echo $latest_date ? esc_html( $latest_date ) : '—'; ?></td>
-					</tr>
-					<tr>
-						<td><strong><?php esc_html_e( 'Total Orders', 'properf' ); ?></strong></td>
-						<td><?php echo esc_html( number_format( $total_orders ) ); ?></td>
-					</tr>
-					<tr>
-						<td><strong><?php echo esc_html( sprintf( __( 'Orders Older Than %d Years', 'properf' ), $threshold_years ) ); ?></strong></td>
-						<td><?php echo esc_html( number_format( $orders_older_than_threshold ) ); ?></td>
-					</tr>
-					<tr>
-						<td><strong><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></strong></td>
-						<td>
-							<?php echo $last_archival_date ? esc_html( $last_archival_date ) : esc_html__( 'Never', 'properf' ); ?>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=properf-settings' ) ); ?>" class="button button-secondary" style="margin-left: 12px;"><?php esc_html_e( 'Update Archival Date', 'properf' ); ?></a>
-						</td>
-					</tr>
-					<tr>
-						<td><strong><?php esc_html_e( 'Current Query Execution Time', 'properf' ); ?></strong></td>
-						<td><?php echo esc_html( $woo_metrics['query_execution_ms'] . ' ms' ); ?></td>
-					</tr>
-					<tr>
-						<td><strong><?php esc_html_e( 'Baseline Query Execution Time', 'properf' ); ?></strong></td>
-						<td><?php
-						if ( null !== $baseline_qet_ms ) {
-							$baseline_qet_source = $woo_metrics['baseline_qet_source'];
-							if ( 'post-archival' === $baseline_qet_source ) {
-								$source_label = __( 'stable baseline', 'properf' );
-							} elseif ( 0 === strpos( $baseline_qet_source ?? '', 'post-archival-pending:' ) ) {
-								$days         = (int) explode( ':', $baseline_qet_source )[1];
-								/* translators: %d = number of days of data collected so far out of 10 */
-								$source_label = sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $days );
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Metric', 'properf' ); ?></th>
+							<th><?php esc_html_e( 'Value', 'properf' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td><strong><?php esc_html_e( 'Order Items Table Size', 'properf' ); ?></strong></td>
+							<td><?php echo esc_html( number_format( $woo_metrics['order_items_size_mb'], 2 ) . ' MB' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Order Itemmeta Table Size', 'properf' ); ?></strong></td>
+							<td><?php echo esc_html( number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ) . ' MB' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Oldest Order Date', 'properf' ); ?></strong></td>
+							<td><?php echo $oldest_date ? esc_html( $oldest_date ) : '—'; ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Latest Order Date', 'properf' ); ?></strong></td>
+							<td><?php echo $latest_date ? esc_html( $latest_date ) : '—'; ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Total Orders', 'properf' ); ?></strong></td>
+							<td><?php echo esc_html( number_format( $total_orders ) ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php echo esc_html( sprintf( __( 'Orders Older Than %d Years', 'properf' ), $threshold_years ) ); ?></strong></td>
+							<td><?php echo esc_html( number_format( $orders_older_than_threshold ) ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Last Archival Date', 'properf' ); ?></strong></td>
+							<td>
+								<?php echo $last_archival_date ? esc_html( $last_archival_date ) : esc_html__( 'Never', 'properf' ); ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=properf-settings' ) ); ?>" class="button button-secondary" style="margin-left: 12px;"><?php esc_html_e( 'Update Archival Date', 'properf' ); ?></a>
+							</td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Current Query Execution Time', 'properf' ); ?></strong></td>
+							<td><?php echo esc_html( $woo_metrics['query_execution_ms'] . ' ms' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'Baseline Query Execution Time', 'properf' ); ?></strong></td>
+							<td><?php
+							if ( null !== $baseline_qet_ms ) {
+								$baseline_qet_source = $woo_metrics['baseline_qet_source'];
+								if ( 'post-archival' === $baseline_qet_source ) {
+									$source_label = __( 'stable baseline', 'properf' );
+								} elseif ( 0 === strpos( $baseline_qet_source ?? '', 'post-archival-pending:' ) ) {
+									$days         = (int) explode( ':', $baseline_qet_source )[1];
+									/* translators: %d = number of days of data collected so far out of 10 */
+									$source_label = sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $days );
+								} else {
+									$days         = ( 0 === strpos( $baseline_qet_source ?? '', 'lowest-10:' ) )
+										? (int) explode( ':', $baseline_qet_source )[1]
+										: 10;
+									/* translators: %d = number of daily readings used */
+									$source_label = sprintf( __( 'based on %d days of data', 'properf' ), $days );
+								}
+								echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span style="color:#888;font-size:0.9em;">(' . esc_html( $source_label ) . ')</span>';
 							} else {
-								$days         = ( 0 === strpos( $baseline_qet_source ?? '', 'lowest-10:' ) )
-									? (int) explode( ':', $baseline_qet_source )[1]
-									: 10;
-								/* translators: %d = number of daily readings used */
-								$source_label = sprintf( __( 'based on %d days of data', 'properf' ), $days );
+								echo '<span style="color:#cc1818;font-style:italic;">' . esc_html__( 'Not enough data to calculate baseline yet', 'properf' ) . '</span>';
 							}
-							echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span style="color:#888;font-size:0.9em;">(' . esc_html( $source_label ) . ')</span>';
-						} else {
-							echo '<span style="color:#cc1818;font-style:italic;">' . esc_html__( 'Not enough data to calculate baseline yet', 'properf' ) . '</span>';
-						}
-						?></td>
-					</tr>
-				</tbody>
-			</table>
+							?></td>
+						</tr>
+					</tbody>
+				</table>
 			<?php else : ?>
 				<p><?php esc_html_e( 'WooCommerce is not active on this site.', 'properf' ); ?></p>
 			<?php endif; ?>

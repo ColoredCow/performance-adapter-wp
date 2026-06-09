@@ -19,7 +19,7 @@ class ProPerf_Live_Data {
 	 *
 	 * @return array Default metrics.
 	 */
-	public static function default_metrics() {
+	private static function default_metrics() {
 		return array(
 			'autoloaded_option' => array(
 				'count'         => 0,
