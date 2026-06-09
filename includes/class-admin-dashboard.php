@@ -91,7 +91,7 @@ class ProPerf_Admin_Dashboard {
 			add_settings_error(
 				'properf_messages',
 				'properf_msg',
-				'Failed: ' . $error_message,
+				__( 'Failed: ', 'properf' ) . $error_message,
 				'error'
 			);
 		}

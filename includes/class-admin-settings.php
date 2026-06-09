@@ -30,7 +30,7 @@ class ProPerf_Admin_Settings {
 	 * @param string $new New value.
 	 */
 	public static function reset_qet_on_archival_change( $old, $new ) {
-		if ( $old !== $new ) {
+		if ( ! empty( $old ) && $old !== $new ) {
 			update_option( 'properf_qet_history', array(), false );
 			delete_option( 'properf_baseline_qet_ms' );
 		}
@@ -40,7 +40,7 @@ class ProPerf_Admin_Settings {
 	 * Register plugin settings, sections, and fields.
 	 */
 	public static function register_settings() {
-		// --- Register all settings first ---
+		// Register all settings.
 
 		register_setting(
 			'properf_bigquery_settings',
@@ -112,7 +112,7 @@ class ProPerf_Admin_Settings {
 			)
 		);
 
-		// --- Register sections ---
+		// Register sections.
 
 		add_settings_section(
 			'properf_bigquery_section',
@@ -128,7 +128,7 @@ class ProPerf_Admin_Settings {
 			'properf-settings'
 		);
 
-		// --- Register fields ---
+		// Register fields.
 
 		add_settings_field(
 			'properf_bigquery_project_id',

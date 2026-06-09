@@ -50,7 +50,7 @@ class ProPerf_Live_Data {
 	public static function get_live_data() {
 		if ( ! class_exists( 'ProPerf_Data_Collector' ) ) {
 			$defaults                                   = self::default_metrics();
-			$defaults['autoloaded_option']['count']     = 'Error: Collector Class Missing';
+			$defaults['autoloaded_option']['count']     = __( 'Error: Collector Class Missing', 'properf' );
 			return $defaults;
 		}
 
@@ -60,7 +60,7 @@ class ProPerf_Live_Data {
 		} catch ( Exception $e ) {
 			error_log( 'ProPerf Error: ' . $e->getMessage() );
 			$defaults                                   = self::default_metrics();
-			$defaults['autoloaded_option']['count']     = 'Error: ' . $e->getMessage();
+			$defaults['autoloaded_option']['count']     = __( 'Error: ', 'properf' ) . $e->getMessage();
 			return $defaults;
 		}
 	}
