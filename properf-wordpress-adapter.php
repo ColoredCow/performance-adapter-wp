@@ -101,18 +101,17 @@ add_action( 'properf_collect_metrics', 'properf_collect_and_push_metrics' );
  */
 function properf_get_next_midnight() {
 	$tz = get_option( 'timezone_string' );
-	$tz = $tz ? $tz : 'UTC';
 
 	if ( empty( $tz ) ) {
 		$gmt_offset = get_option( 'gmt_offset' );
-		$tz         = timezone_name_from_abbr( '', $gmt_offset * 3600, false );
+		$tz         = timezone_name_from_abbr( '', (float) $gmt_offset * 3600, false );
 		if ( false === $tz ) {
 			$tz = 'UTC';
 		}
 	}
 
-	$target_tz    = new DateTimeZone( $tz );
-	$now          = new DateTime( 'now', $target_tz );
+	$target_tz      = new DateTimeZone( $tz );
+	$now            = new DateTime( 'now', $target_tz );
 	$today_midnight = new DateTime( '00:00:00', $target_tz );
 
 	if ( $today_midnight <= $now ) {

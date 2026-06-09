@@ -206,12 +206,14 @@ class ProPerf_Admin_Settings {
 	public static function sanitize_threshold_years( $value ) {
 		$value = intval( $value );
 		if ( $value < 1 || $value > 20 ) {
-			add_settings_error(
-				'properf_messages',
-				'properf_threshold_years_invalid',
-				__( 'Retention window must be between 1 and 20 years. Previous value restored.', 'properf' ),
-				'error'
-			);
+			if ( is_admin() && ! wp_doing_cron() ) {
+				add_settings_error(
+					'properf_messages',
+					'properf_threshold_years_invalid',
+					__( 'Retention window must be between 1 and 20 years. Previous value restored.', 'properf' ),
+					'error'
+				);
+			}
 			return intval( get_option( 'properf_archival_threshold_years', 2 ) );
 		}
 		return $value;
@@ -230,12 +232,14 @@ class ProPerf_Admin_Settings {
 		}
 		$date = \DateTime::createFromFormat( 'Y-m-d', $value );
 		if ( ! $date || $date->format( 'Y-m-d' ) !== $value ) {
-			add_settings_error(
-				'properf_messages',
-				'properf_archival_date_invalid',
-				__( 'Invalid archival date. Must be in YYYY-MM-DD format. Previous value restored.', 'properf' ),
-				'error'
-			);
+			if ( is_admin() && ! wp_doing_cron() ) {
+				add_settings_error(
+					'properf_messages',
+					'properf_archival_date_invalid',
+					__( 'Invalid archival date. Must be in YYYY-MM-DD format. Previous value restored.', 'properf' ),
+					'error'
+				);
+			}
 			return get_option( 'properf_last_archival_date', '' );
 		}
 		return $value;

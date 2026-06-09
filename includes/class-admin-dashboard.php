@@ -92,29 +92,41 @@ class ProPerf_Admin_Dashboard {
 
 		if ( $success ) {
 			delete_option( 'properf_bq_last_sync_error' );
-			add_settings_error(
-				'properf_messages',
-				'properf_msg',
-				__( 'Data successfully pushed to BigQuery!', 'properf' ),
-				'updated'
-			);
+			set_transient( 'properf_push_notice_' . get_current_user_id(), array( 'type' => 'success' ), 60 );
 		} else {
 			$error_message = $bq_client->get_last_error();
 			update_option( 'properf_bq_last_sync_error', $error_message, false );
-
-			add_settings_error(
-				'properf_messages',
-				'properf_msg',
-				__( 'Failed: ', 'properf' ) . $error_message,
-				'error'
-			);
+			set_transient( 'properf_push_notice_' . get_current_user_id(), array( 'type' => 'error', 'message' => $error_message ), 60 );
 		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=properf' ) );
+		exit;
 	}
 
 	/**
 	 * Show settings-saved notice after settings form is submitted.
 	 */
 	public static function handle_settings_notices() {
+		$push_notice = get_transient( 'properf_push_notice_' . get_current_user_id() );
+		if ( $push_notice ) {
+			delete_transient( 'properf_push_notice_' . get_current_user_id() );
+			if ( 'success' === $push_notice['type'] ) {
+				add_settings_error(
+					'properf_messages',
+					'properf_push_success',
+					__( 'Data successfully pushed to BigQuery!', 'properf' ),
+					'updated'
+				);
+			} else {
+				add_settings_error(
+					'properf_messages',
+					'properf_push_error',
+					__( 'Failed: ', 'properf' ) . $push_notice['message'],
+					'error'
+				);
+			}
+		}
+
 		if (
 			isset( $_GET['settings-updated'] ) &&
 			isset( $_GET['page'] ) &&
@@ -255,11 +267,11 @@ class ProPerf_Admin_Dashboard {
 						</tr>
 						<tr>
 							<td><strong><?php esc_html_e( 'Oldest Order Date', 'properf' ); ?></strong></td>
-							<td><?php echo $oldest_date ? esc_html( $oldest_date ) : '—'; ?></td>
+							<td><?php echo esc_html( $oldest_date ? $oldest_date : '—' ); ?></td>
 						</tr>
 						<tr>
 							<td><strong><?php esc_html_e( 'Latest Order Date', 'properf' ); ?></strong></td>
-							<td><?php echo $latest_date ? esc_html( $latest_date ) : '—'; ?></td>
+							<td><?php echo esc_html( $latest_date ? $latest_date : '—' ); ?></td>
 						</tr>
 						<tr>
 							<td><strong><?php esc_html_e( 'Total Orders', 'properf' ); ?></strong></td>
@@ -283,25 +295,25 @@ class ProPerf_Admin_Dashboard {
 						<tr>
 							<td><strong><?php esc_html_e( 'Baseline Query Execution Time', 'properf' ); ?></strong></td>
 							<td><?php
-							if ( null !== $baseline_qet_ms ) {
-								$baseline_qet_source = $woo_metrics['baseline_qet_source'];
-								if ( 'post-archival' === $baseline_qet_source ) {
-									$source_label = __( 'stable baseline', 'properf' );
-								} elseif ( 0 === strpos( $baseline_qet_source ?? '', 'post-archival-pending:' ) ) {
-									$days         = (int) explode( ':', $baseline_qet_source )[1];
-									/* translators: %d = number of days of data collected so far out of 10 */
-									$source_label = sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $days );
+								if ( null !== $baseline_qet_ms ) {
+									$baseline_qet_source = $woo_metrics['baseline_qet_source'];
+									if ( 'post-archival' === $baseline_qet_source ) {
+										$source_label = __( 'stable baseline', 'properf' );
+									} elseif ( 0 === strpos( $baseline_qet_source ?? '', 'post-archival-pending:' ) ) {
+										$days         = (int) explode( ':', $baseline_qet_source )[1];
+										/* translators: %d = number of days of data collected so far out of 10 */
+										$source_label = sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $days );
+									} else {
+										$days         = ( 0 === strpos( $baseline_qet_source ?? '', 'lowest-10:' ) )
+											? (int) explode( ':', $baseline_qet_source )[1]
+											: 10;
+										/* translators: %d = number of daily readings used */
+										$source_label = sprintf( __( 'based on %d days of data', 'properf' ), $days );
+									}
+									echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span class="properf-baseline-source">(' . esc_html( $source_label ) . ')</span>';
 								} else {
-									$days         = ( 0 === strpos( $baseline_qet_source ?? '', 'lowest-10:' ) )
-										? (int) explode( ':', $baseline_qet_source )[1]
-										: 10;
-									/* translators: %d = number of daily readings used */
-									$source_label = sprintf( __( 'based on %d days of data', 'properf' ), $days );
+									echo '<span class="properf-baseline-unavailable">' . esc_html__( 'Not enough data to calculate baseline yet', 'properf' ) . '</span>';
 								}
-								echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span class="properf-baseline-source">(' . esc_html( $source_label ) . ')</span>';
-							} else {
-								echo '<span class="properf-baseline-unavailable">' . esc_html__( 'Not enough data to calculate baseline yet', 'properf' ) . '</span>';
-							}
 							?></td>
 						</tr>
 					</tbody>
