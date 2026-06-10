@@ -15,37 +15,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ProPerf_Admin_Dashboard {
 
 	/**
-	 * Per-user transient key for push result notices.
-	 *
-	 * @return string Transient key.
-	 */
-	private static function push_notice_key() {
-		return 'properf_push_notice_' . get_current_user_id();
-	}
-
-	/**
-	 * Format a human-readable label for a baseline QET source string.
-	 *
-	 * @param string|null $source Source string from get_baseline_qet().
-	 * @return string Translated label.
-	 */
-	private static function format_baseline_label( $source ) {
-		if ( 'post-archival' === $source ) {
-			return __( 'stable baseline', 'properf' );
-		}
-		if ( 0 === strpos( $source ?? '', 'post-archival-pending:' ) ) {
-			$days = (int) explode( ':', $source )[1];
-			/* translators: %d = number of days of data collected so far out of 10 */
-			return sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $days );
-		}
-		$days = ( 0 === strpos( $source ?? '', 'lowest-10:' ) )
-			? (int) explode( ':', $source )[1]
-			: 10;
-		/* translators: %d = number of daily readings used */
-		return sprintf( __( 'based on %d days of data', 'properf' ), $days );
-	}
-
-	/**
 	 * Register hooks.
 	 */
 	public static function init() {
@@ -336,5 +305,36 @@ class ProPerf_Admin_Dashboard {
 			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Per-user transient key for push result notices.
+	 *
+	 * @return string Transient key.
+	 */
+	private static function push_notice_key() {
+		return 'properf_push_notice_' . get_current_user_id();
+	}
+
+	/**
+	 * Format a human-readable label for a baseline QET source string.
+	 *
+	 * @param string|null $source Source string from get_baseline_qet().
+	 * @return string Translated label.
+	 */
+	private static function format_baseline_label( $source ) {
+		if ( 'post-archival' === $source ) {
+			return __( 'stable baseline', 'properf' );
+		}
+		if ( 0 === strpos( $source ?? '', 'post-archival-pending:' ) ) {
+			$days = (int) explode( ':', $source )[1];
+			/* translators: %d = number of days of data collected so far out of 10 */
+			return sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $days );
+		}
+		$days = ( 0 === strpos( $source ?? '', 'lowest-10:' ) )
+			? (int) explode( ':', $source )[1]
+			: 10;
+		/* translators: %d = number of daily readings used */
+		return sprintf( __( 'based on %d days of data', 'properf' ), $days );
 	}
 }
