@@ -69,30 +69,12 @@ add_action( 'wp', 'properf_schedule_metrics_collection' );
  * Handle scheduled metrics collection and push to BigQuery.
  */
 function properf_collect_and_push_metrics() {
-	require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
+	$result = ( new ProPerf_Data_Collector() )->collect_and_push();
 
-	$collector = new ProPerf_Data_Collector();
-	$metrics   = $collector->get_data();
-	$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
-	$bq_client = new ProPerf_BigQuery_Client();
-
-	$success = $bq_client->push_metrics( $metrics );
-
-	update_option( 'properf_bq_last_sync', time(), false );
-	update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
-
-	if ( $success ) {
-		delete_option( 'properf_bq_last_sync_error' );
-		error_log(
-			'ProPerf: Metrics successfully pushed to BigQuery at ' . gmdate( 'Y-m-d H:i:s' )
-		);
+	if ( $result['success'] ) {
+		error_log( 'ProPerf: Metrics successfully pushed to BigQuery at ' . gmdate( 'Y-m-d H:i:s' ) );
 	} else {
-		$error_message = $bq_client->get_last_error();
-		update_option( 'properf_bq_last_sync_error', $error_message, false );
-
-		error_log(
-			'ProPerf Error: Failed to push metrics to BigQuery - ' . $error_message
-		);
+		error_log( 'ProPerf Error: Failed to push metrics to BigQuery - ' . $result['error'] );
 	}
 }
 add_action( 'properf_collect_metrics', 'properf_collect_and_push_metrics' );

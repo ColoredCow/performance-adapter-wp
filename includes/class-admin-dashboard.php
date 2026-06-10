@@ -15,6 +15,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ProPerf_Admin_Dashboard {
 
 	/**
+	 * Per-user transient key for push result notices.
+	 *
+	 * @return string Transient key.
+	 */
+	private static function push_notice_key() {
+		return 'properf_push_notice_' . get_current_user_id();
+	}
+
+	/**
+	 * Format a human-readable label for a baseline QET source string.
+	 *
+	 * @param string|null $source Source string from get_baseline_qet().
+	 * @return string Translated label.
+	 */
+	private static function format_baseline_label( $source ) {
+		if ( 'post-archival' === $source ) {
+			return __( 'stable baseline', 'properf' );
+		}
+		if ( 0 === strpos( $source ?? '', 'post-archival-pending:' ) ) {
+			$days = (int) explode( ':', $source )[1];
+			/* translators: %d = number of days of data collected so far out of 10 */
+			return sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $days );
+		}
+		$days = ( 0 === strpos( $source ?? '', 'lowest-10:' ) )
+			? (int) explode( ':', $source )[1]
+			: 10;
+		/* translators: %d = number of daily readings used */
+		return sprintf( __( 'based on %d days of data', 'properf' ), $days );
+	}
+
+	/**
 	 * Register hooks.
 	 */
 	public static function init() {
@@ -81,25 +112,12 @@ class ProPerf_Admin_Dashboard {
 			wp_die( esc_html__( 'Unauthorized', 'properf' ) );
 		}
 
-		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
+		$result = ( new ProPerf_Data_Collector() )->collect_and_push();
 
-		$collector = new ProPerf_Data_Collector();
-		$metrics   = $collector->get_data();
-		$collector->record_qet_reading( $metrics['woo']['query_execution_ms'] );
-		$bq_client = new ProPerf_BigQuery_Client();
-
-		$success = $bq_client->push_metrics( $metrics );
-
-		update_option( 'properf_bq_last_sync', time(), false );
-		update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
-
-		if ( $success ) {
-			delete_option( 'properf_bq_last_sync_error' );
-			set_transient( 'properf_push_notice_' . get_current_user_id(), array( 'type' => 'success' ), 60 );
+		if ( $result['success'] ) {
+			set_transient( self::push_notice_key(), array( 'type' => 'success' ), 60 );
 		} else {
-			$error_message = $bq_client->get_last_error();
-			update_option( 'properf_bq_last_sync_error', $error_message, false );
-			set_transient( 'properf_push_notice_' . get_current_user_id(), array( 'type' => 'error', 'message' => $error_message ), 60 );
+			set_transient( self::push_notice_key(), array( 'type' => 'error', 'message' => $result['error'] ), 60 );
 		}
 
 		wp_safe_redirect( admin_url( 'admin.php?page=properf' ) );
@@ -115,21 +133,21 @@ class ProPerf_Admin_Dashboard {
 			return;
 		}
 
-		$push_notice = get_transient( 'properf_push_notice_' . get_current_user_id() );
+		$push_notice = get_transient( self::push_notice_key() );
 		if ( $push_notice ) {
-			delete_transient( 'properf_push_notice_' . get_current_user_id() );
+			delete_transient( self::push_notice_key() );
 			if ( 'success' === $push_notice['type'] ) {
 				add_settings_error(
 					'properf_messages',
 					'properf_push_success',
-					__( 'Data successfully pushed to BigQuery!', 'properf' ),
+					esc_html__( 'Data successfully pushed to BigQuery!', 'properf' ),
 					'updated'
 				);
 			} else {
 				add_settings_error(
 					'properf_messages',
 					'properf_push_error',
-					__( 'Failed: ', 'properf' ) . esc_html( $push_notice['message'] ),
+					esc_html__( 'Failed: ', 'properf' ) . esc_html( $push_notice['message'] ),
 					'error'
 				);
 			}
@@ -142,7 +160,7 @@ class ProPerf_Admin_Dashboard {
 			add_settings_error(
 				'properf_messages',
 				'properf_settings_saved',
-				__( 'Settings saved successfully.', 'properf' ),
+				esc_html__( 'Settings saved successfully.', 'properf' ),
 				'updated'
 			);
 		}
@@ -160,6 +178,7 @@ class ProPerf_Admin_Dashboard {
 		$autoloaded_data_metrics = $metrics['autoloaded_option'];
 
 		$autoload_count = $autoloaded_data_metrics['count'];
+		$autoload_error = $autoloaded_data_metrics['error'] ?? null;
 		$size_bytes     = $autoloaded_data_metrics['size_bytes'];
 		$top_size_keys  = $autoloaded_data_metrics['top_size_keys'];
 
@@ -223,7 +242,7 @@ class ProPerf_Admin_Dashboard {
 				<tbody>
 					<tr>
 						<td><strong><?php esc_html_e( 'Autoloaded Option Count', 'properf' ); ?></strong></td>
-						<td><?php echo esc_html( is_numeric( $autoload_count ) ? number_format( (int) $autoload_count ) : $autoload_count ); ?></td>
+						<td><?php echo $autoload_error ? esc_html( $autoload_error ) : esc_html( number_format( $autoload_count ) ); ?></td>
 					</tr>
 					<tr>
 						<td><strong><?php esc_html_e( 'Autoloaded Option Size', 'properf' ); ?></strong></td>
@@ -303,20 +322,7 @@ class ProPerf_Admin_Dashboard {
 							<td><strong><?php esc_html_e( 'Baseline Query Execution Time', 'properf' ); ?></strong></td>
 							<td><?php
 								if ( null !== $baseline_qet_ms ) {
-									$baseline_qet_source = $woo_metrics['baseline_qet_source'];
-									if ( 'post-archival' === $baseline_qet_source ) {
-										$source_label = __( 'stable baseline', 'properf' );
-									} elseif ( 0 === strpos( $baseline_qet_source ?? '', 'post-archival-pending:' ) ) {
-										$days         = (int) explode( ':', $baseline_qet_source )[1];
-										/* translators: %d = number of days of data collected so far out of 10 */
-										$source_label = sprintf( __( 'building new baseline — day %d of 10', 'properf' ), $days );
-									} else {
-										$days         = ( 0 === strpos( $baseline_qet_source ?? '', 'lowest-10:' ) )
-											? (int) explode( ':', $baseline_qet_source )[1]
-											: 10;
-										/* translators: %d = number of daily readings used */
-										$source_label = sprintf( __( 'based on %d days of data', 'properf' ), $days );
-									}
+									$source_label = self::format_baseline_label( $woo_metrics['baseline_qet_source'] );
 									echo esc_html( $baseline_qet_ms . ' ms' ) . ' <span class="properf-baseline-source">(' . esc_html( $source_label ) . ')</span>';
 								} else {
 									echo '<span class="properf-baseline-unavailable">' . esc_html__( 'Not enough data to calculate baseline yet', 'properf' ) . '</span>';

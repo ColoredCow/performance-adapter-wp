@@ -257,6 +257,34 @@ class ProPerf_Data_Collector {
 	}
 
 	/**
+	 * Collect metrics, record QET, push to BigQuery, and persist sync status.
+	 * Returns result so callers can handle their own notifications.
+	 *
+	 * @return array { bool $success, string $error }
+	 */
+	public function collect_and_push() {
+		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
+
+		$metrics   = $this->get_data();
+		$this->record_qet_reading( $metrics['woo']['query_execution_ms'] );
+		$bq_client = new ProPerf_BigQuery_Client();
+		$success   = $bq_client->push_metrics( $metrics );
+
+		update_option( 'properf_bq_last_sync', time(), false );
+		update_option( 'properf_bq_last_sync_status', $success ? 'success' : 'error', false );
+
+		$error = '';
+		if ( $success ) {
+			delete_option( 'properf_bq_last_sync_error' );
+		} else {
+			$error = $bq_client->get_last_error();
+			update_option( 'properf_bq_last_sync_error', $error, false );
+		}
+
+		return array( 'success' => $success, 'error' => $error );
+	}
+
+	/**
 	 * Compute baseline QET. Locks after 10 post-archival readings once available.
 	 * Falls back to avg of 10 lowest readings from rolling history.
 	 *
