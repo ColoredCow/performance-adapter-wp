@@ -371,7 +371,7 @@ class ProPerf_Admin_Settings {
 	 * @return string Modified redirect location.
 	 */
 	public static function settings_redirect( $location ) {
-		if ( isset( $_POST['option_page'] ) && 'properf_bigquery_settings' === $_POST['option_page'] ) {
+		if ( isset( $_POST['option_page'] ) && 'properf_bigquery_settings' === sanitize_key( $_POST['option_page'] ) ) {
 			$location = add_query_arg( 'page', 'properf-settings', $location );
 		}
 		return $location;
