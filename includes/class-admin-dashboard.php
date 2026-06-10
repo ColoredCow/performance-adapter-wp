@@ -77,6 +77,9 @@ class ProPerf_Admin_Dashboard {
 			return;
 		}
 		check_admin_referer( 'properf_push_action', 'properf_push_nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Unauthorized', 'properf' ) );
+		}
 
 		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
 
