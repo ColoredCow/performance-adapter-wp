@@ -1,0 +1,21 @@
+.properf-push-form {
+	margin-bottom: 20px;
+}
+
+.properf-section-heading {
+	margin-top: 30px;
+}
+
+.properf-update-link {
+	margin-left: 12px;
+}
+
+.properf-baseline-source {
+	color: #888;
+	font-size: 0.9em;
+}
+
+.properf-baseline-unavailable {
+	color: #cc1818;
+	font-style: italic;
+}
