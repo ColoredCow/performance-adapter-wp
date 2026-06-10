@@ -137,8 +137,7 @@ class ProPerf_Admin_Dashboard {
 
 		if (
 			isset( $_GET['settings-updated'] ) &&
-			isset( $_GET['page'] ) &&
-			'properf-settings' === $_GET['page']
+			'properf-settings' === $page
 		) {
 			add_settings_error(
 				'properf_messages',
