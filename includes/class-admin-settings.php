@@ -46,8 +46,15 @@ class ProPerf_Admin_Settings {
 	 * Register plugin settings, sections, and fields.
 	 */
 	public static function register_settings() {
-		// Register all settings.
+		self::register_options();
+		self::register_sections();
+		self::register_fields();
+	}
 
+	/**
+	 * Register individual setting options.
+	 */
+	private static function register_options() {
 		register_setting(
 			'properf_bigquery_settings',
 			'properf_bigquery_project_id',
@@ -117,9 +124,12 @@ class ProPerf_Admin_Settings {
 				'default'           => '',
 			)
 		);
+	}
 
-		// Register sections.
-
+	/**
+	 * Register settings sections.
+	 */
+	private static function register_sections() {
 		add_settings_section(
 			'properf_bigquery_section',
 			__( 'BigQuery Configuration', 'properf' ),
@@ -133,9 +143,12 @@ class ProPerf_Admin_Settings {
 			array( __CLASS__, 'woo_section_callback' ),
 			'properf-settings'
 		);
+	}
 
-		// Register fields.
-
+	/**
+	 * Register settings fields.
+	 */
+	private static function register_fields() {
 		add_settings_field(
 			'properf_bigquery_project_id',
 			__( 'Project ID', 'properf' ),
