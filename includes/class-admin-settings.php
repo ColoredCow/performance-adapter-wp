@@ -15,12 +15,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ProPerf_Admin_Settings {
 
 	/**
-	 * Register hooks.
+	 * Register hooks that must fire in any context (CLI, REST, cron, frontend).
+	 */
+	public static function register_persistent_hooks() {
+		add_action( 'update_option_properf_last_archival_date', array( __CLASS__, 'reset_qet_on_archival_change' ), 10, 2 );
+	}
+
+	/**
+	 * Register admin-only hooks.
 	 */
 	public static function init() {
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ), 20 );
 		add_filter( 'wp_redirect', array( __CLASS__, 'settings_redirect' ) );
-		add_action( 'update_option_properf_last_archival_date', array( __CLASS__, 'reset_qet_on_archival_change' ), 10, 2 );
 	}
 
 	/**
