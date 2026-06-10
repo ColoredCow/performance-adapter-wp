@@ -25,6 +25,7 @@ class ProPerf_Live_Data {
 				'count'         => 0,
 				'size_bytes'    => 0,
 				'top_size_keys' => array(),
+				'error'         => null,
 			),
 			'woo'               => array(
 				'order_items_size_mb'         => 0.0,
@@ -49,8 +50,8 @@ class ProPerf_Live_Data {
 	 */
 	public static function get_live_data() {
 		if ( ! class_exists( 'ProPerf_Data_Collector' ) ) {
-			$defaults                                   = self::default_metrics();
-			$defaults['autoloaded_option']['count']     = __( 'Error: Collector Class Missing', 'properf' );
+			$defaults = self::default_metrics();
+			$defaults['autoloaded_option']['error'] = __( 'Error: Collector Class Missing', 'properf' );
 			return $defaults;
 		}
 
@@ -59,8 +60,8 @@ class ProPerf_Live_Data {
 			return $collector->get_data();
 		} catch ( Exception $e ) {
 			error_log( 'ProPerf Error: ' . $e->getMessage() );
-			$defaults                                   = self::default_metrics();
-			$defaults['autoloaded_option']['count']     = __( 'Error: ', 'properf' ) . $e->getMessage();
+			$defaults = self::default_metrics();
+			$defaults['autoloaded_option']['error'] = $e->getMessage();
 			return $defaults;
 		}
 	}
