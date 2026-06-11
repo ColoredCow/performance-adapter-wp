@@ -95,6 +95,7 @@ class ProPerf_Data_Collector {
 			);
 		}
 
+		// Cache is invalidated by collect_and_push() and by settings changes via ProPerf_Admin_Settings::bust_woo_metrics_cache().
 		$cached = get_transient( 'properf_woo_metrics_snapshot' );
 		if ( false !== $cached ) {
 			return $cached;
@@ -267,6 +268,21 @@ class ProPerf_Data_Collector {
 	}
 
 	/**
+	 * Refresh the baseline fields in the cached snapshot after a new QET reading is recorded.
+	 * Keeps the rest of the snapshot intact so the dashboard reflects the post-push baseline immediately.
+	 */
+	private function refresh_cached_baseline() {
+		$cached = get_transient( 'properf_woo_metrics_snapshot' );
+		if ( false === $cached ) {
+			return;
+		}
+		$baseline                          = $this->get_baseline_qet( $cached['woo']['last_archival_date'] );
+		$cached['woo']['baseline_qet_ms']  = $baseline['ms'];
+		$cached['woo']['baseline_qet_source'] = $baseline['source'];
+		set_transient( 'properf_woo_metrics_snapshot', $cached, HOUR_IN_SECONDS );
+	}
+
+	/**
 	 * Collect metrics, record QET, push to BigQuery, and persist sync status.
 	 * Returns result so callers can handle their own notifications.
 	 *
@@ -285,6 +301,7 @@ class ProPerf_Data_Collector {
 		}
 
 		$this->record_qet_reading( $metrics['woo']['query_execution_ms'] );
+		$this->refresh_cached_baseline();
 		$bq_client = new ProPerf_BigQuery_Client();
 		$success   = $bq_client->push_metrics( $metrics );
 

@@ -19,6 +19,8 @@ class ProPerf_Admin_Settings {
 	 */
 	public static function register_persistent_hooks() {
 		add_action( 'update_option_properf_last_archival_date', array( __CLASS__, 'reset_qet_on_archival_change' ), 10, 2 );
+		add_action( 'update_option_properf_last_archival_date', array( __CLASS__, 'bust_woo_metrics_cache' ) );
+		add_action( 'update_option_properf_archival_threshold_years', array( __CLASS__, 'bust_woo_metrics_cache' ) );
 	}
 
 	/**
@@ -40,6 +42,13 @@ class ProPerf_Admin_Settings {
 			update_option( 'properf_qet_history', array(), false );
 			delete_option( 'properf_baseline_qet_ms' );
 		}
+	}
+
+	/**
+	 * Invalidate the cached WooCommerce metrics snapshot when settings that affect it change.
+	 */
+	public static function bust_woo_metrics_cache() {
+		delete_transient( 'properf_woo_metrics_snapshot' );
 	}
 
 	/**
