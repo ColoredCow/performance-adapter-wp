@@ -95,6 +95,11 @@ class ProPerf_Data_Collector {
 			);
 		}
 
+		$cached = get_transient( 'properf_woo_metrics_snapshot' );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
 		global $wpdb;
 
 		$db_name  = DB_NAME;
@@ -196,7 +201,7 @@ class ProPerf_Data_Collector {
 		$last_archival_date = get_option( 'properf_last_archival_date', null ) ?: null;
 		$baseline           = $this->get_baseline_qet( $last_archival_date );
 
-		return array(
+		$result = array(
 			'woo' => array(
 				'order_items_size_mb'    => $items_size ? round( floatval( $items_size ), 4 ) : 0.0,
 				'order_itemmeta_size_mb' => $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : 0.0,
@@ -211,6 +216,10 @@ class ProPerf_Data_Collector {
 				'baseline_qet_source'    => $baseline['source'],
 			),
 		);
+
+		set_transient( 'properf_woo_metrics_snapshot', $result, HOUR_IN_SECONDS );
+
+		return $result;
 	}
 
 	/**
@@ -265,6 +274,8 @@ class ProPerf_Data_Collector {
 	 */
 	public function collect_and_push() {
 		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
+
+		delete_transient( 'properf_woo_metrics_snapshot' );
 
 		try {
 			$metrics = $this->get_data();
