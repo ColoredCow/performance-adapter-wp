@@ -270,16 +270,20 @@ class ProPerf_Data_Collector {
 	/**
 	 * Refresh the baseline fields in the cached snapshot after a new QET reading is recorded.
 	 * Keeps the rest of the snapshot intact so the dashboard reflects the post-push baseline immediately.
+	 * Returns the updated baseline array, or null if no snapshot was cached.
+	 *
+	 * @return array|null {ms: int|null, source: string|null}, or null if no cached snapshot exists.
 	 */
 	private function refresh_cached_baseline() {
 		$cached = get_transient( 'properf_woo_metrics_snapshot' );
 		if ( false === $cached ) {
-			return;
+			return null;
 		}
-		$baseline                          = $this->get_baseline_qet( $cached['woo']['last_archival_date'] );
+		$baseline = $this->get_baseline_qet( $cached['woo']['last_archival_date'] );
 		$cached['woo']['baseline_qet_ms']     = $baseline['ms'];
 		$cached['woo']['baseline_qet_source'] = $baseline['source'];
 		set_transient( 'properf_woo_metrics_snapshot', $cached, HOUR_IN_SECONDS );
+		return $baseline;
 	}
 
 	/**
@@ -301,7 +305,11 @@ class ProPerf_Data_Collector {
 		}
 
 		$this->record_qet_reading( $metrics['woo']['query_execution_ms'] );
-		$this->refresh_cached_baseline();
+		$baseline = $this->refresh_cached_baseline();
+		if ( null !== $baseline ) {
+			$metrics['woo']['baseline_qet_ms']     = $baseline['ms'];
+			$metrics['woo']['baseline_qet_source'] = $baseline['source'];
+		}
 		$bq_client = new ProPerf_BigQuery_Client();
 		$success   = $bq_client->push_metrics( $metrics );
 
