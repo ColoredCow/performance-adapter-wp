@@ -95,7 +95,7 @@ class ProPerf_Data_Collector {
 			);
 		}
 
-		// Cache is invalidated by collect_and_push() and by settings changes via ProPerf_Admin_Settings::bust_woo_metrics_cache().
+		// Cached for 1 hour; invalidated on push and on relevant settings changes.
 		$cached = get_transient( 'properf_woo_metrics_snapshot' );
 		if ( false !== $cached ) {
 			return $cached;
@@ -277,7 +277,7 @@ class ProPerf_Data_Collector {
 			return;
 		}
 		$baseline                          = $this->get_baseline_qet( $cached['woo']['last_archival_date'] );
-		$cached['woo']['baseline_qet_ms']  = $baseline['ms'];
+		$cached['woo']['baseline_qet_ms']     = $baseline['ms'];
 		$cached['woo']['baseline_qet_source'] = $baseline['source'];
 		set_transient( 'properf_woo_metrics_snapshot', $cached, HOUR_IN_SECONDS );
 	}
