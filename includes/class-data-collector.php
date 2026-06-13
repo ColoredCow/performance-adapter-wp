@@ -14,6 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ProPerf_Data_Collector {
 
+	const WOO_METRICS_CACHE_KEY = 'properf_woo_metrics_snapshot';
+
 	/**
 	 * Get collected data.
 	 *
@@ -93,6 +95,12 @@ class ProPerf_Data_Collector {
 					'baseline_qet_source'          => null,
 				),
 			);
+		}
+
+		// Cached for 1 hour; invalidated on push and on relevant settings changes.
+		$cached = get_transient( self::WOO_METRICS_CACHE_KEY );
+		if ( false !== $cached ) {
+			return $cached;
 		}
 
 		global $wpdb;
@@ -196,7 +204,7 @@ class ProPerf_Data_Collector {
 		$last_archival_date = get_option( 'properf_last_archival_date', null ) ?: null;
 		$baseline           = $this->get_baseline_qet( $last_archival_date );
 
-		return array(
+		$result = array(
 			'woo' => array(
 				'order_items_size_mb'    => $items_size ? round( floatval( $items_size ), 4 ) : 0.0,
 				'order_itemmeta_size_mb' => $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : 0.0,
@@ -211,6 +219,10 @@ class ProPerf_Data_Collector {
 				'baseline_qet_source'    => $baseline['source'],
 			),
 		);
+
+		set_transient( self::WOO_METRICS_CACHE_KEY, $result, HOUR_IN_SECONDS );
+
+		return $result;
 	}
 
 	/**
@@ -258,6 +270,30 @@ class ProPerf_Data_Collector {
 	}
 
 	/**
+	 * Refresh the baseline fields in the cached snapshot after a new QET reading is recorded.
+	 * Keeps the rest of the snapshot intact so the dashboard reflects the post-push baseline immediately.
+	 * Returns the updated baseline array, or null if no snapshot was cached.
+	 *
+	 * Most calls are no-ops (locked baseline returns the same value either way).
+	 * Matters at lock-in (10th post-archival reading) and when the lowest-10
+	 * fallback shifts down — both move the baseline in ways the just-computed
+	 * snapshot won't reflect.
+	 *
+	 * @return array|null {ms: int|null, source: string|null}, or null if no cached snapshot exists.
+	 */
+	private function refresh_cached_baseline() {
+		$cached = get_transient( self::WOO_METRICS_CACHE_KEY );
+		if ( false === $cached ) {
+			return null;
+		}
+		$baseline = $this->get_baseline_qet( $cached['woo']['last_archival_date'] );
+		$cached['woo']['baseline_qet_ms']     = $baseline['ms'];
+		$cached['woo']['baseline_qet_source'] = $baseline['source'];
+		set_transient( self::WOO_METRICS_CACHE_KEY, $cached, HOUR_IN_SECONDS );
+		return $baseline;
+	}
+
+	/**
 	 * Collect metrics, record QET, push to BigQuery, and persist sync status.
 	 * Returns result so callers can handle their own notifications.
 	 *
@@ -265,6 +301,8 @@ class ProPerf_Data_Collector {
 	 */
 	public function collect_and_push() {
 		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
+
+		delete_transient( self::WOO_METRICS_CACHE_KEY );
 
 		try {
 			$metrics = $this->get_data();
@@ -274,6 +312,11 @@ class ProPerf_Data_Collector {
 		}
 
 		$this->record_qet_reading( $metrics['woo']['query_execution_ms'] );
+		$baseline = $this->refresh_cached_baseline();
+		if ( null !== $baseline ) {
+			$metrics['woo']['baseline_qet_ms']     = $baseline['ms'];
+			$metrics['woo']['baseline_qet_source'] = $baseline['source'];
+		}
 		$bq_client = new ProPerf_BigQuery_Client();
 		$success   = $bq_client->push_metrics( $metrics );
 
@@ -350,6 +393,14 @@ class ProPerf_Data_Collector {
 			'ms'     => (int) round( array_sum( $lowest ) / count( $lowest ) ),
 			'source' => 'lowest-10:' . count( $lowest ),
 		);
+	}
+
+	/**
+	 * Delete the cached WooCommerce metrics snapshot.
+	 * Called by settings hooks when archival date or threshold changes.
+	 */
+	public static function bust_metrics_cache() {
+		delete_transient( self::WOO_METRICS_CACHE_KEY );
 	}
 
 	/**
