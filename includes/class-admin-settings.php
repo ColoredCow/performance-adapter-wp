@@ -409,9 +409,36 @@ class ProPerf_Admin_Settings {
 	 * DB size alert threshold field renderer.
 	 * Stores value in MB internally. The unit dropdown is a display convenience
 	 * — JS converts GB to MB before the form submits.
+	 * Pre-fills a suggested value when the field is empty and enough data exists.
 	 */
 	public static function order_itemmeta_alert_threshold_mb_field() {
 		$stored_mb = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
+
+		$suggestion_notice = '';
+
+		if ( '' === $stored_mb ) {
+			$snapshot = get_transient( 'properf_woo_metrics_snapshot' );
+
+			if ( $snapshot && ! empty( $snapshot['total_orders'] ) && $snapshot['total_orders'] > 0 && ! empty( $snapshot['orders_older_than_threshold'] ) && $snapshot['orders_older_than_threshold'] > 0 ) {
+				$current_mb  = (float) $snapshot['order_itemmeta_size_mb'];
+				$total       = (int) $snapshot['total_orders'];
+				$older       = (int) $snapshot['orders_older_than_threshold'];
+				$avg_mb      = $current_mb / $total;
+				$archivable  = $avg_mb * $older;
+				$healthy     = $current_mb - $archivable;
+				$suggested   = (int) round( $healthy * 2 );
+
+				if ( $suggested > 0 ) {
+					$stored_mb         = $suggested;
+					$suggestion_notice = sprintf(
+						/* translators: MB value */
+						__( 'Pre-filled based on current DB state: estimated post-archival size × 2. You can adjust this value.', 'properf' )
+					);
+				}
+			} elseif ( $snapshot && ( empty( $snapshot['orders_older_than_threshold'] ) || 0 === (int) $snapshot['orders_older_than_threshold'] ) ) {
+				$suggestion_notice = __( 'No archivable orders found for the current retention window — set threshold manually or leave empty to disable.', 'properf' );
+			}
+		}
 		?>
 		<div style="display:flex;align-items:center;gap:8px;">
 			<input
@@ -429,6 +456,9 @@ class ProPerf_Admin_Settings {
 			</select>
 		</div>
 		<p class="description"><?php esc_html_e( 'Alert when order_item_meta exceeds this size. Value is always stored in MB. Leave empty to disable.', 'properf' ); ?></p>
+		<?php if ( $suggestion_notice ) : ?>
+			<p class="description" style="margin-top:4px;"><?php echo esc_html( $suggestion_notice ); ?></p>
+		<?php endif; ?>
 		<script>
 		(function () {
 			var input  = document.getElementById( 'properf_order_itemmeta_db_alert_threshold' );
