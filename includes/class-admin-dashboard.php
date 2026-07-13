@@ -160,6 +160,8 @@ class ProPerf_Admin_Dashboard {
 		$threshold_years             = $woo_metrics['threshold_years'];
 		$last_archival_date          = $woo_metrics['last_archival_date'];
 		$baseline_qet_ms             = $woo_metrics['baseline_qet_ms'];
+		$archival_signal_active      = $woo_metrics['archival_signal_active'] ?? false;
+		$alert_threshold_mb          = $woo_metrics['alert_threshold_mb'] ?? null;
 
 		$last_sync = get_option( 'properf_bq_last_sync' );
 
@@ -259,6 +261,21 @@ class ProPerf_Admin_Dashboard {
 						<tr>
 							<td><strong><?php esc_html_e( 'Order Itemmeta Table Size', 'properf' ); ?></strong></td>
 							<td><?php echo esc_html( number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ) . ' MB' ); ?></td>
+						</tr>
+						<tr>
+							<td><strong><?php esc_html_e( 'DB Archival Signal', 'properf' ); ?></strong></td>
+							<td>
+								<?php if ( null === $alert_threshold_mb ) : ?>
+									<span class="properf-baseline-unavailable"><?php esc_html_e( 'Threshold not configured', 'properf' ); ?></span>
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=properf-settings' ) ); ?>" class="button button-secondary properf-update-link"><?php esc_html_e( 'Configure', 'properf' ); ?></a>
+								<?php elseif ( $archival_signal_active ) : ?>
+									<span style="color:#b32d2e;font-weight:600;">&#9888; <?php esc_html_e( 'Archival recommended', 'properf' ); ?></span>
+									<span class="properf-baseline-source">(<?php echo esc_html( number_format( $alert_threshold_mb ) . ' MB threshold' ); ?>)</span>
+								<?php else : ?>
+									<span style="color:#0a7227;font-weight:600;">&#10003; <?php esc_html_e( 'DB health: OK', 'properf' ); ?></span>
+									<span class="properf-baseline-source">(<?php echo esc_html( number_format( $alert_threshold_mb ) . ' MB threshold' ); ?>)</span>
+								<?php endif; ?>
+							</td>
 						</tr>
 						<tr>
 							<td><strong><?php esc_html_e( 'Oldest Order Date', 'properf' ); ?></strong></td>
