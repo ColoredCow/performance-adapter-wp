@@ -432,9 +432,11 @@ class ProPerf_Admin_Settings {
 				$healthy     = $current_mb - $archivable;
 				$suggested   = (int) round( $healthy * 2 );
 
-				if ( $suggested > 0 ) {
+				if ( $suggested >= 500 ) {
 					$stored_mb         = $suggested;
 					$suggestion_notice = __( 'Pre-filled based on current DB state: estimated post-archival size × 2. You can adjust this value.', 'properf' );
+				} elseif ( $suggested > 0 ) {
+					$suggestion_notice = __( 'DB is too small for archival planning — no threshold needed yet. Set manually if required.', 'properf' );
 				}
 			} elseif ( $woo && ( empty( $woo['orders_older_than_threshold'] ) || 0 === (int) $woo['orders_older_than_threshold'] ) ) {
 				$suggestion_notice = __( 'No archivable orders found for the current retention window — set threshold manually or leave empty to disable.', 'properf' );
