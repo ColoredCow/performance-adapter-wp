@@ -143,6 +143,8 @@ class ProPerf_BigQuery_Client {
 					array( 'name' => 'woo_last_archival_date',     'type' => 'DATE',    'mode' => 'NULLABLE' ),
 					array( 'name' => 'woo_query_execution_ms',     'type' => 'INTEGER'                      ),
 					array( 'name' => 'woo_baseline_qet_ms',        'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_archival_signal_active',  'type' => 'BOOLEAN', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_alert_threshold_mb',      'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
 				),
 			);
 
