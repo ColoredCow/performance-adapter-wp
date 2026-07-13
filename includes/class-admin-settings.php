@@ -417,12 +417,13 @@ class ProPerf_Admin_Settings {
 		$suggestion_notice = '';
 
 		if ( '' === $stored_mb ) {
-			$snapshot = get_transient( 'properf_woo_metrics_snapshot' );
+			$snapshot     = get_transient( 'properf_woo_metrics_snapshot' );
+			$woo          = isset( $snapshot['woo'] ) ? $snapshot['woo'] : null;
 
-			if ( $snapshot && ! empty( $snapshot['total_orders'] ) && $snapshot['total_orders'] > 0 && ! empty( $snapshot['orders_older_than_threshold'] ) && $snapshot['orders_older_than_threshold'] > 0 ) {
-				$current_mb  = (float) $snapshot['order_itemmeta_size_mb'];
-				$total       = (int) $snapshot['total_orders'];
-				$older       = (int) $snapshot['orders_older_than_threshold'];
+			if ( $woo && ! empty( $woo['total_orders'] ) && $woo['total_orders'] > 0 && ! empty( $woo['orders_older_than_threshold'] ) && $woo['orders_older_than_threshold'] > 0 ) {
+				$current_mb  = (float) $woo['order_itemmeta_size_mb'];
+				$total       = (int) $woo['total_orders'];
+				$older       = (int) $woo['orders_older_than_threshold'];
 				$avg_mb      = $current_mb / $total;
 				$archivable  = $avg_mb * $older;
 				$healthy     = $current_mb - $archivable;
@@ -430,12 +431,9 @@ class ProPerf_Admin_Settings {
 
 				if ( $suggested > 0 ) {
 					$stored_mb         = $suggested;
-					$suggestion_notice = sprintf(
-						/* translators: MB value */
-						__( 'Pre-filled based on current DB state: estimated post-archival size × 2. You can adjust this value.', 'properf' )
-					);
+					$suggestion_notice = __( 'Pre-filled based on current DB state: estimated post-archival size × 2. You can adjust this value.', 'properf' );
 				}
-			} elseif ( $snapshot && ( empty( $snapshot['orders_older_than_threshold'] ) || 0 === (int) $snapshot['orders_older_than_threshold'] ) ) {
+			} elseif ( $woo && ( empty( $woo['orders_older_than_threshold'] ) || 0 === (int) $woo['orders_older_than_threshold'] ) ) {
 				$suggestion_notice = __( 'No archivable orders found for the current retention window — set threshold manually or leave empty to disable.', 'properf' );
 			}
 		}
