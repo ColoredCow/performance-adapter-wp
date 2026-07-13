@@ -23,6 +23,8 @@ class ProPerf_Admin_Settings {
 		add_action( 'add_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 		add_action( 'update_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 		add_action( 'add_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'update_option_properf_order_itemmeta_alert_threshold_mb', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'add_option_properf_order_itemmeta_alert_threshold_mb', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 	}
 
 	/**
@@ -128,6 +130,16 @@ class ProPerf_Admin_Settings {
 				'default'           => '',
 			)
 		);
+
+		register_setting(
+			'properf_bigquery_settings',
+			'properf_order_itemmeta_alert_threshold_mb',
+			array(
+				'type'              => 'integer',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_alert_threshold_mb' ),
+				'default'           => '',
+			)
+		);
 	}
 
 	/**
@@ -205,6 +217,14 @@ class ProPerf_Admin_Settings {
 			'properf_last_archival_date',
 			__( 'Last Archival Date', 'properf' ),
 			array( __CLASS__, 'last_archival_date_field' ),
+			'properf-settings',
+			'properf_woo_section'
+		);
+
+		add_settings_field(
+			'properf_order_itemmeta_alert_threshold_mb',
+			__( 'DB Size Alert Threshold (MB)', 'properf' ),
+			array( __CLASS__, 'order_itemmeta_alert_threshold_mb_field' ),
 			'properf-settings',
 			'properf_woo_section'
 		);
@@ -349,6 +369,31 @@ class ProPerf_Admin_Settings {
 	}
 
 	/**
+	 * Sanitize alert threshold — must be a positive integer in MB, or empty to disable.
+	 *
+	 * @param mixed $value Submitted value.
+	 * @return int|string Sanitized value or empty string.
+	 */
+	public static function sanitize_alert_threshold_mb( $value ) {
+		if ( '' === $value || null === $value ) {
+			return '';
+		}
+		$value = intval( $value );
+		if ( $value <= 0 ) {
+			if ( is_admin() && ! wp_doing_cron() ) {
+				add_settings_error(
+					'properf_messages',
+					'properf_alert_threshold_mb_invalid',
+					__( 'DB size alert threshold must be a positive number. Previous value restored.', 'properf' ),
+					'error'
+				);
+			}
+			return get_option( 'properf_order_itemmeta_alert_threshold_mb', '' );
+		}
+		return $value;
+	}
+
+	/**
 	 * Last archival date field renderer.
 	 */
 	public static function last_archival_date_field() {
@@ -356,6 +401,17 @@ class ProPerf_Admin_Settings {
 		?>
 		<input type="date" id="properf_last_archival_date" name="properf_last_archival_date" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
 		<p class="description"><?php esc_html_e( 'Optional. Enter the date when orders were last archived for this client. Used as a reference point on the dashboard.', 'properf' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * DB size alert threshold field renderer.
+	 */
+	public static function order_itemmeta_alert_threshold_mb_field() {
+		$value = get_option( 'properf_order_itemmeta_alert_threshold_mb', '' );
+		?>
+		<input type="number" id="properf_order_itemmeta_alert_threshold_mb" name="properf_order_itemmeta_alert_threshold_mb" value="<?php echo esc_attr( $value ); ?>" min="1" step="1" class="regular-text" />
+		<p class="description"><?php esc_html_e( 'Alert when order_item_meta table exceeds this size in MB. Leave empty to disable the alert. Example: 18000 for 18 GB.', 'properf' ); ?></p>
 		<?php
 	}
 
