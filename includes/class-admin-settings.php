@@ -23,8 +23,8 @@ class ProPerf_Admin_Settings {
 		add_action( 'add_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 		add_action( 'update_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 		add_action( 'add_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'update_option_properf_order_itemmeta_alert_threshold_mb', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'add_option_properf_order_itemmeta_alert_threshold_mb', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'update_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'add_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 	}
 
 	/**
@@ -133,7 +133,7 @@ class ProPerf_Admin_Settings {
 
 		register_setting(
 			'properf_bigquery_settings',
-			'properf_order_itemmeta_alert_threshold_mb',
+			'properf_order_itemmeta_db_alert_threshold',
 			array(
 				'type'              => 'integer',
 				'sanitize_callback' => array( __CLASS__, 'sanitize_alert_threshold_mb' ),
@@ -222,8 +222,8 @@ class ProPerf_Admin_Settings {
 		);
 
 		add_settings_field(
-			'properf_order_itemmeta_alert_threshold_mb',
-			__( 'DB Size Alert Threshold (MB)', 'properf' ),
+			'properf_order_itemmeta_db_alert_threshold',
+			__( 'DB Size Alert Threshold', 'properf' ),
 			array( __CLASS__, 'order_itemmeta_alert_threshold_mb_field' ),
 			'properf-settings',
 			'properf_woo_section'
@@ -369,10 +369,11 @@ class ProPerf_Admin_Settings {
 	}
 
 	/**
-	 * Sanitize alert threshold — must be a positive integer in MB, or empty to disable.
+	 * Sanitize alert threshold — value arrives pre-converted to MB by the JS on the form.
+	 * Must be a positive integer, or empty to disable.
 	 *
-	 * @param mixed $value Submitted value.
-	 * @return int|string Sanitized value or empty string.
+	 * @param mixed $value Submitted value (always in MB).
+	 * @return int|string Sanitized MB value or empty string.
 	 */
 	public static function sanitize_alert_threshold_mb( $value ) {
 		if ( '' === $value || null === $value ) {
@@ -388,7 +389,7 @@ class ProPerf_Admin_Settings {
 					'error'
 				);
 			}
-			return get_option( 'properf_order_itemmeta_alert_threshold_mb', '' );
+			return get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
 		}
 		return $value;
 	}
@@ -406,12 +407,41 @@ class ProPerf_Admin_Settings {
 
 	/**
 	 * DB size alert threshold field renderer.
+	 * Stores value in MB internally. The unit dropdown is a display convenience
+	 * — JS converts GB to MB before the form submits.
 	 */
 	public static function order_itemmeta_alert_threshold_mb_field() {
-		$value = get_option( 'properf_order_itemmeta_alert_threshold_mb', '' );
+		$stored_mb = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
 		?>
-		<input type="number" id="properf_order_itemmeta_alert_threshold_mb" name="properf_order_itemmeta_alert_threshold_mb" value="<?php echo esc_attr( $value ); ?>" min="1" step="1" class="regular-text" />
-		<p class="description"><?php esc_html_e( 'Alert when order_item_meta table exceeds this size in MB. Leave empty to disable the alert. Example: 18000 for 18 GB.', 'properf' ); ?></p>
+		<div style="display:flex;align-items:center;gap:8px;">
+			<input
+				type="number"
+				id="properf_order_itemmeta_db_alert_threshold"
+				name="properf_order_itemmeta_db_alert_threshold"
+				value="<?php echo esc_attr( $stored_mb ); ?>"
+				min="1"
+				step="1"
+				class="regular-text"
+			/>
+			<select id="properf_db_alert_threshold_unit">
+				<option value="mb">MB</option>
+				<option value="gb">GB</option>
+			</select>
+		</div>
+		<p class="description"><?php esc_html_e( 'Alert when order_item_meta exceeds this size. Value is always stored in MB. Leave empty to disable.', 'properf' ); ?></p>
+		<script>
+		(function () {
+			var input  = document.getElementById( 'properf_order_itemmeta_db_alert_threshold' );
+			var select = document.getElementById( 'properf_db_alert_threshold_unit' );
+			var form   = input ? input.closest( 'form' ) : null;
+			if ( ! form ) return;
+			form.addEventListener( 'submit', function () {
+				if ( select.value === 'gb' && input.value !== '' ) {
+					input.value = Math.round( parseFloat( input.value ) * 1024 );
+				}
+			} );
+		}());
+		</script>
 		<?php
 	}
 
