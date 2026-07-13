@@ -417,8 +417,11 @@ class ProPerf_Admin_Settings {
 		$suggestion_notice = '';
 
 		if ( '' === $stored_mb ) {
-			$snapshot     = get_transient( 'properf_woo_metrics_snapshot' );
-			$woo          = isset( $snapshot['woo'] ) ? $snapshot['woo'] : null;
+			$snapshot = get_transient( 'properf_woo_metrics_snapshot' );
+			if ( false === $snapshot && class_exists( 'ProPerf_Data_Collector' ) ) {
+				$snapshot = ( new ProPerf_Data_Collector() )->collect_woo_order_metrics();
+			}
+			$woo = isset( $snapshot['woo'] ) ? $snapshot['woo'] : null;
 
 			if ( $woo && ! empty( $woo['total_orders'] ) && $woo['total_orders'] > 0 && ! empty( $woo['orders_older_than_threshold'] ) && $woo['orders_older_than_threshold'] > 0 ) {
 				$current_mb  = (float) $woo['order_itemmeta_size_mb'];
