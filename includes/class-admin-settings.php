@@ -477,8 +477,9 @@ class ProPerf_Admin_Settings {
 			var form   = input ? input.closest( 'form' ) : null;
 			if ( ! form ) return;
 			function setUnit( unit ) {
-				select.value  = unit;
-				input.step    = unit === 'gb' ? '0.01' : '1';
+				select.value = unit;
+				input.step   = unit === 'gb' ? '0.01' : '1';
+				input.min    = unit === 'gb' ? '0.01' : '1';
 			}
 			// On load: display in GB if value is >= 1024 MB.
 			if ( input.value !== '' ) {
@@ -488,8 +489,19 @@ class ProPerf_Admin_Settings {
 					setUnit( 'gb' );
 				}
 			}
+			// Track current unit so the change handler can convert the input value.
+			select.dataset.prev = select.value;
 			select.addEventListener( 'change', function () {
+				var prev = select.dataset.prev;
+				if ( input.value !== '' ) {
+					if ( prev === 'mb' && select.value === 'gb' ) {
+						input.value = Math.round( ( parseFloat( input.value ) / 1024 ) * 100 ) / 100;
+					} else if ( prev === 'gb' && select.value === 'mb' ) {
+						input.value = Math.round( parseFloat( input.value ) * 1024 );
+					}
+				}
 				setUnit( select.value );
+				select.dataset.prev = select.value;
 			} );
 			form.addEventListener( 'submit', function () {
 				if ( select.value === 'gb' && input.value !== '' ) {

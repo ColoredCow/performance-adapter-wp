@@ -423,20 +423,20 @@ class ProPerf_Data_Collector {
 		$timestamp = gmdate( 'Y-m-d H:i:s' );
 
 		return array(
-			'timestamp_utc'              => $timestamp,
-			'autoloaded_option_count'    => $metrics['autoloaded_option']['count'],
-			'autoloaded_option_size'     => $metrics['autoloaded_option']['size_bytes'],
-			'site_url'                   => $site_url,
-			'woo_order_items_size_mb'    => $metrics['woo']['order_items_size_mb'],
-			'woo_order_itemmeta_size_mb' => $metrics['woo']['order_itemmeta_size_mb'],
-			'woo_oldest_order_date'      => $metrics['woo']['oldest_order_date'],
-			'woo_latest_order_date'      => $metrics['woo']['latest_order_date'],
+			'timestamp_utc'                   => $timestamp,
+			'autoloaded_option_count'         => $metrics['autoloaded_option']['count'],
+			'autoloaded_option_size'          => $metrics['autoloaded_option']['size_bytes'],
+			'site_url'                        => $site_url,
+			'woo_order_items_size_mb'         => $metrics['woo']['order_items_size_mb'],
+			'woo_order_itemmeta_size_mb'      => $metrics['woo']['order_itemmeta_size_mb'],
+			'woo_oldest_order_date'           => $metrics['woo']['oldest_order_date'],
+			'woo_latest_order_date'           => $metrics['woo']['latest_order_date'],
 			'woo_orders_older_than_threshold' => $metrics['woo']['orders_older_than_threshold'],
-			'woo_last_archival_date'     => $metrics['woo']['last_archival_date'],
-			'woo_query_execution_ms'         => $metrics['woo']['query_execution_ms'],
-			'woo_baseline_qet_ms'            => $metrics['woo']['baseline_qet_ms'],
-			'woo_archival_signal_active'     => $metrics['woo']['archival_signal_active'],
-			'woo_alert_threshold_mb'         => $metrics['woo']['alert_threshold_mb'],
+			'woo_last_archival_date'          => $metrics['woo']['last_archival_date'],
+			'woo_query_execution_ms'          => $metrics['woo']['query_execution_ms'],
+			'woo_baseline_qet_ms'             => $metrics['woo']['baseline_qet_ms'],
+			'woo_archival_signal_active'      => $metrics['woo']['archival_signal_active'],
+			'woo_alert_threshold_mb'          => $metrics['woo']['alert_threshold_mb'],
 		);
 	}
 }
