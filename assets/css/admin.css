@@ -20,6 +20,16 @@
 	font-style: italic;
 }
 
+.properf-threshold-input-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.properf-suggestion-notice {
+	margin-top: 4px;
+}
+
 .properf-signal-banner {
 	margin: 16px 0;
 	padding: 12px 16px;

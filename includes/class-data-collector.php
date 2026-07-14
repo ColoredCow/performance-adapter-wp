@@ -433,10 +433,10 @@ class ProPerf_Data_Collector {
 			'woo_latest_order_date'      => $metrics['woo']['latest_order_date'],
 			'woo_orders_older_than_threshold' => $metrics['woo']['orders_older_than_threshold'],
 			'woo_last_archival_date'     => $metrics['woo']['last_archival_date'],
-			'woo_query_execution_ms'     => $metrics['woo']['query_execution_ms'],
-			'woo_baseline_qet_ms'        => $metrics['woo']['baseline_qet_ms'],
-			'woo_archival_signal_active'  => $metrics['woo']['archival_signal_active'],
-			'woo_alert_threshold_mb'      => $metrics['woo']['alert_threshold_mb'],
+			'woo_query_execution_ms'         => $metrics['woo']['query_execution_ms'],
+			'woo_baseline_qet_ms'            => $metrics['woo']['baseline_qet_ms'],
+			'woo_archival_signal_active'     => $metrics['woo']['archival_signal_active'],
+			'woo_alert_threshold_mb'         => $metrics['woo']['alert_threshold_mb'],
 		);
 	}
 }

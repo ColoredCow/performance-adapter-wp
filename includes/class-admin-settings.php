@@ -451,7 +451,7 @@ class ProPerf_Admin_Settings {
 			}
 		}
 		?>
-		<div style="display:flex;align-items:center;gap:8px;">
+		<div class="properf-threshold-input-wrap">
 			<input
 				type="number"
 				id="properf_order_itemmeta_db_alert_threshold"
@@ -468,7 +468,7 @@ class ProPerf_Admin_Settings {
 		</div>
 		<p class="description"><?php esc_html_e( 'Alert when order_item_meta exceeds this size. Value is always stored in MB.', 'properf' ); ?></p>
 		<?php if ( $suggestion_notice ) : ?>
-			<p class="description" style="margin-top:4px;"><?php echo esc_html( $suggestion_notice ); ?></p>
+			<p class="description properf-suggestion-notice"><?php echo esc_html( $suggestion_notice ); ?></p>
 		<?php endif; ?>
 		<script>
 		(function () {
@@ -476,14 +476,21 @@ class ProPerf_Admin_Settings {
 			var select = document.getElementById( 'properf_db_alert_threshold_unit' );
 			var form   = input ? input.closest( 'form' ) : null;
 			if ( ! form ) return;
-			// On load: if stored MB value is a round multiple of 1024, display in GB.
+			function setUnit( unit ) {
+				select.value  = unit;
+				input.step    = unit === 'gb' ? '0.01' : '1';
+			}
+			// On load: display in GB if value is >= 1024 MB.
 			if ( input.value !== '' ) {
 				var mb = parseInt( input.value, 10 );
-				if ( mb >= 1024 && mb % 1024 === 0 ) {
-					input.value = mb / 1024;
-					select.value = 'gb';
+				if ( mb >= 1024 ) {
+					input.value = Math.round( ( mb / 1024 ) * 100 ) / 100;
+					setUnit( 'gb' );
 				}
 			}
+			select.addEventListener( 'change', function () {
+				setUnit( select.value );
+			} );
 			form.addEventListener( 'submit', function () {
 				if ( select.value === 'gb' && input.value !== '' ) {
 					input.value = Math.round( parseFloat( input.value ) * 1024 );
