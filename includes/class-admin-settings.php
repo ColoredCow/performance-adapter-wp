@@ -458,7 +458,7 @@ class ProPerf_Admin_Settings {
 				<option value="gb">GB</option>
 			</select>
 		</div>
-		<p class="description"><?php esc_html_e( 'Alert when order_item_meta exceeds this size. Value is always stored in MB. Leave empty to disable.', 'properf' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Alert when order_item_meta exceeds this size. Value is always stored in MB.', 'properf' ); ?></p>
 		<?php if ( $suggestion_notice ) : ?>
 			<p class="description" style="margin-top:4px;"><?php echo esc_html( $suggestion_notice ); ?></p>
 		<?php endif; ?>
