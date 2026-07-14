@@ -160,9 +160,9 @@ class ProPerf_Admin_Dashboard {
 		$threshold_years             = $woo_metrics['threshold_years'];
 		$last_archival_date          = $woo_metrics['last_archival_date'];
 		$baseline_qet_ms             = $woo_metrics['baseline_qet_ms'];
-		$raw_threshold          = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
-		$alert_threshold_mb     = ( '' !== $raw_threshold && (int) $raw_threshold > 0 ) ? (int) $raw_threshold : null;
-		$archival_signal_active = null !== $alert_threshold_mb
+		$raw_threshold               = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
+		$alert_threshold_mb          = ( '' !== $raw_threshold && (int) $raw_threshold > 0 ) ? (int) $raw_threshold : null;
+		$archival_signal_active      = null !== $alert_threshold_mb
 			&& (float) $woo_metrics['order_itemmeta_size_mb'] >= (float) $alert_threshold_mb
 			&& $orders_older_than_threshold > 0;
 
@@ -206,13 +206,13 @@ class ProPerf_Admin_Dashboard {
 			</form>
 
 			<?php if ( function_exists( 'WC' ) && null !== $alert_threshold_mb ) : ?>
-				<div style="margin:16px 0;padding:12px 16px;border-left:4px solid <?php echo $archival_signal_active ? '#b32d2e' : '#0a7227'; ?>;background:<?php echo $archival_signal_active ? '#fdf2f2' : '#f0faf3'; ?>;">
+				<div class="properf-signal-banner <?php echo $archival_signal_active ? 'properf-signal-banner--alert' : 'properf-signal-banner--ok'; ?>">
 					<?php if ( $archival_signal_active ) : ?>
-						<strong style="color:#b32d2e;font-size:14px;">&#9888; <?php esc_html_e( 'Archival recommended', 'properf' ); ?></strong>
-						<span style="color:#5c3232;margin-left:8px;"><?php echo esc_html( sprintf( __( 'Order itemmeta is %s MB — past the %s MB threshold with archivable orders present.', 'properf' ), number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
+						<strong class="properf-signal-banner__title--alert">&#9888; <?php esc_html_e( 'Archival recommended', 'properf' ); ?></strong>
+						<span class="properf-signal-banner__detail--alert"><?php echo esc_html( sprintf( __( 'Order itemmeta is %s MB — past the %s MB threshold with archivable orders present.', 'properf' ), number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
 					<?php else : ?>
-						<strong style="color:#0a7227;font-size:14px;">&#10003; <?php esc_html_e( 'DB health: OK', 'properf' ); ?></strong>
-						<span style="color:#1a3d1a;margin-left:8px;"><?php echo esc_html( sprintf( __( 'Order itemmeta is %s MB — below the %s MB threshold.', 'properf' ), number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
+						<strong class="properf-signal-banner__title--ok">&#10003; <?php esc_html_e( 'DB health: OK', 'properf' ); ?></strong>
+						<span class="properf-signal-banner__detail--ok"><?php echo esc_html( sprintf( __( 'Order itemmeta is %s MB — below the %s MB threshold.', 'properf' ), number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
 					<?php endif; ?>
 				</div>
 			<?php endif; ?>

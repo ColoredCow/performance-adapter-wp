@@ -15,6 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ProPerf_Admin_Settings {
 
 	/**
+	 * Minimum suggested threshold in MB below which archival planning is not meaningful.
+	 */
+	const MIN_ARCHIVAL_THRESHOLD_MB = 500;
+
+	/**
 	 * Register hooks that must fire in any context (CLI, REST, cron, frontend).
 	 */
 	public static function register_persistent_hooks() {
@@ -25,6 +30,7 @@ class ProPerf_Admin_Settings {
 		add_action( 'add_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 		add_action( 'update_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 		add_action( 'add_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'delete_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 	}
 
 	/**
@@ -418,7 +424,7 @@ class ProPerf_Admin_Settings {
 
 		if ( '' === $stored_mb ) {
 			$snapshot = get_transient( 'properf_woo_metrics_snapshot' );
-			if ( false === $snapshot && class_exists( 'ProPerf_Data_Collector' ) ) {
+			if ( false === $snapshot && function_exists( 'WC' ) && class_exists( 'ProPerf_Data_Collector' ) ) {
 				$snapshot = ( new ProPerf_Data_Collector() )->collect_woo_order_metrics();
 			}
 			$woo = isset( $snapshot['woo'] ) ? $snapshot['woo'] : null;
@@ -432,11 +438,13 @@ class ProPerf_Admin_Settings {
 				$healthy     = $current_mb - $archivable;
 				$suggested   = (int) round( $healthy * 2 );
 
-				if ( $suggested >= 500 ) {
+				if ( $suggested >= self::MIN_ARCHIVAL_THRESHOLD_MB ) {
 					$stored_mb         = $suggested;
 					$suggestion_notice = __( 'Pre-filled based on current DB state: estimated post-archival size × 2. You can adjust this value.', 'properf' );
 				} elseif ( $suggested > 0 ) {
 					$suggestion_notice = __( 'DB is too small for archival planning — no threshold needed yet. Set manually if required.', 'properf' );
+				} else {
+					$suggestion_notice = __( 'Could not estimate a valid threshold from current data — set manually.', 'properf' );
 				}
 			} elseif ( $woo && ( empty( $woo['orders_older_than_threshold'] ) || 0 === (int) $woo['orders_older_than_threshold'] ) ) {
 				$suggestion_notice = __( 'No archivable orders found for the current retention window — set threshold manually or leave empty to disable.', 'properf' );
@@ -468,6 +476,14 @@ class ProPerf_Admin_Settings {
 			var select = document.getElementById( 'properf_db_alert_threshold_unit' );
 			var form   = input ? input.closest( 'form' ) : null;
 			if ( ! form ) return;
+			// On load: if stored MB value is a round multiple of 1024, display in GB.
+			if ( input.value !== '' ) {
+				var mb = parseInt( input.value, 10 );
+				if ( mb >= 1024 && mb % 1024 === 0 ) {
+					input.value = mb / 1024;
+					select.value = 'gb';
+				}
+			}
 			form.addEventListener( 'submit', function () {
 				if ( select.value === 'gb' && input.value !== '' ) {
 					input.value = Math.round( parseFloat( input.value ) * 1024 );
