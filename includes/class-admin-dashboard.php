@@ -160,8 +160,11 @@ class ProPerf_Admin_Dashboard {
 		$threshold_years             = $woo_metrics['threshold_years'];
 		$last_archival_date          = $woo_metrics['last_archival_date'];
 		$baseline_qet_ms             = $woo_metrics['baseline_qet_ms'];
-		$archival_signal_active      = $woo_metrics['archival_signal_active'] ?? false;
-		$alert_threshold_mb          = $woo_metrics['alert_threshold_mb'] ?? null;
+		$raw_threshold          = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
+		$alert_threshold_mb     = ( '' !== $raw_threshold && (int) $raw_threshold > 0 ) ? (int) $raw_threshold : null;
+		$archival_signal_active = null !== $alert_threshold_mb
+			&& (float) $woo_metrics['order_itemmeta_size_mb'] >= (float) $alert_threshold_mb
+			&& $orders_older_than_threshold > 0;
 
 		$last_sync = get_option( 'properf_bq_last_sync' );
 
