@@ -202,6 +202,18 @@ class ProPerf_Admin_Dashboard {
 				<input type="submit" name="properf_push_to_bq" class="button button-primary" value="<?php esc_attr_e( 'Push to BigQuery', 'properf' ); ?>">
 			</form>
 
+			<?php if ( function_exists( 'WC' ) && null !== $alert_threshold_mb ) : ?>
+				<div style="margin:16px 0;padding:12px 16px;border-left:4px solid <?php echo $archival_signal_active ? '#b32d2e' : '#0a7227'; ?>;background:<?php echo $archival_signal_active ? '#fdf2f2' : '#f0faf3'; ?>;">
+					<?php if ( $archival_signal_active ) : ?>
+						<strong style="color:#b32d2e;font-size:14px;">&#9888; <?php esc_html_e( 'Archival recommended', 'properf' ); ?></strong>
+						<span style="color:#5c3232;margin-left:8px;"><?php echo esc_html( sprintf( __( 'Order itemmeta is %s MB — past the %s MB threshold with archivable orders present.', 'properf' ), number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
+					<?php else : ?>
+						<strong style="color:#0a7227;font-size:14px;">&#10003; <?php esc_html_e( 'DB health: OK', 'properf' ); ?></strong>
+						<span style="color:#1a3d1a;margin-left:8px;"><?php echo esc_html( sprintf( __( 'Order itemmeta is %s MB — below the %s MB threshold.', 'properf' ), number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
+
 			<h2><?php esc_html_e( 'Summary Metrics', 'properf' ); ?></h2>
 			<table class="widefat striped">
 				<thead>
@@ -261,21 +273,6 @@ class ProPerf_Admin_Dashboard {
 						<tr>
 							<td><strong><?php esc_html_e( 'Order Itemmeta Table Size', 'properf' ); ?></strong></td>
 							<td><?php echo esc_html( number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ) . ' MB' ); ?></td>
-						</tr>
-						<tr>
-							<td><strong><?php esc_html_e( 'DB Archival Signal', 'properf' ); ?></strong></td>
-							<td>
-								<?php if ( null === $alert_threshold_mb ) : ?>
-									<span class="properf-baseline-unavailable"><?php esc_html_e( 'Threshold not configured', 'properf' ); ?></span>
-									<a href="<?php echo esc_url( admin_url( 'admin.php?page=properf-settings' ) ); ?>" class="button button-secondary properf-update-link"><?php esc_html_e( 'Configure', 'properf' ); ?></a>
-								<?php elseif ( $archival_signal_active ) : ?>
-									<span style="color:#b32d2e;font-weight:600;">&#9888; <?php esc_html_e( 'Archival recommended', 'properf' ); ?></span>
-									<span class="properf-baseline-source">(<?php echo esc_html( number_format( $alert_threshold_mb ) . ' MB threshold' ); ?>)</span>
-								<?php else : ?>
-									<span style="color:#0a7227;font-weight:600;">&#10003; <?php esc_html_e( 'DB health: OK', 'properf' ); ?></span>
-									<span class="properf-baseline-source">(<?php echo esc_html( number_format( $alert_threshold_mb ) . ' MB threshold' ); ?>)</span>
-								<?php endif; ?>
-							</td>
 						</tr>
 						<tr>
 							<td><strong><?php esc_html_e( 'Oldest Order Date', 'properf' ); ?></strong></td>
