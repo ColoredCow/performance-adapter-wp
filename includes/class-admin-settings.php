@@ -385,8 +385,15 @@ class ProPerf_Admin_Settings {
 		if ( '' === $value || null === $value ) {
 			return '';
 		}
-		$value = intval( $value );
-		if ( $value <= 0 ) {
+		$unit    = isset( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] )
+			? sanitize_key( wp_unslash( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] ) )
+			: 'mb';
+		$numeric = floatval( $value );
+		if ( 'gb' === $unit ) {
+			$numeric *= 1024;
+		}
+		$mb = (int) round( $numeric );
+		if ( $mb <= 0 ) {
 			if ( is_admin() && ! wp_doing_cron() ) {
 				add_settings_error(
 					'properf_messages',
@@ -397,7 +404,7 @@ class ProPerf_Admin_Settings {
 			}
 			return get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
 		}
-		return $value;
+		return $mb;
 	}
 
 	/**
@@ -413,8 +420,8 @@ class ProPerf_Admin_Settings {
 
 	/**
 	 * DB size alert threshold field renderer.
-	 * Stores value in MB internally. The unit dropdown is a display convenience
-	 * — JS converts GB to MB before the form submits.
+	 * Stores value in MB internally. The unit is submitted as a named form field
+	 * and converted to MB server-side in sanitize_alert_threshold_mb().
 	 * Pre-fills a suggested value when the field is empty and enough data exists.
 	 */
 	public static function order_itemmeta_alert_threshold_mb_field() {
@@ -468,7 +475,7 @@ class ProPerf_Admin_Settings {
 				step="1"
 				class="regular-text"
 			/>
-			<select id="properf_db_alert_threshold_unit">
+			<select id="properf_db_alert_threshold_unit" name="properf_order_itemmeta_db_alert_threshold_unit">
 				<option value="mb">MB</option>
 				<option value="gb">GB</option>
 			</select>
@@ -509,11 +516,6 @@ class ProPerf_Admin_Settings {
 				}
 				setUnit( select.value );
 				select.dataset.prev = select.value;
-			} );
-			form.addEventListener( 'submit', function () {
-				if ( select.value === 'gb' && input.value !== '' ) {
-					input.value = Math.round( parseFloat( input.value ) * 1024 );
-				}
 			} );
 		}());
 		</script>
