@@ -390,6 +390,9 @@ class ProPerf_Admin_Settings {
 		$unit    = isset( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] )
 			? sanitize_key( wp_unslash( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] ) )
 			: 'mb';
+		if ( ! in_array( $unit, array( 'mb', 'gb' ), true ) ) {
+			$unit = 'mb';
+		}
 		$numeric = floatval( $value );
 		if ( 'gb' === $unit ) {
 			$numeric *= 1024;
