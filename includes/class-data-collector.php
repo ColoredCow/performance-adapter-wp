@@ -432,6 +432,7 @@ class ProPerf_Data_Collector {
 			'woo_oldest_order_date'           => $metrics['woo']['oldest_order_date'],
 			'woo_latest_order_date'           => $metrics['woo']['latest_order_date'],
 			'woo_orders_older_than_threshold' => $metrics['woo']['orders_older_than_threshold'],
+			'woo_total_orders'                => $metrics['woo']['total_orders'],
 			'woo_last_archival_date'          => $metrics['woo']['last_archival_date'],
 			'woo_query_execution_ms'          => $metrics['woo']['query_execution_ms'],
 			'woo_baseline_qet_ms'             => $metrics['woo']['baseline_qet_ms'],
