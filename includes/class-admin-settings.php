@@ -141,7 +141,7 @@ class ProPerf_Admin_Settings {
 			'properf_bigquery_settings',
 			'properf_order_itemmeta_db_alert_threshold',
 			array(
-				'type'              => 'integer',
+				'type'              => 'string',
 				'sanitize_callback' => array( __CLASS__, 'sanitize_alert_threshold_mb' ),
 				'default'           => '',
 			)
