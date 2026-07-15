@@ -440,7 +440,14 @@ class ProPerf_Admin_Settings {
 
 				if ( $suggested >= self::MIN_ARCHIVAL_THRESHOLD_MB ) {
 					$stored_mb         = $suggested;
-					$suggestion_notice = __( 'Pre-filled based on current DB state: estimated post-archival size × 2. You can adjust this value.', 'properf' );
+					$suggestion_notice = sprintf(
+						/* translators: 1: itemmeta size MB, 2: total orders, 3: orders older than retention, 4: post-archival estimate MB */
+						__( 'Pre-filled from DB snapshot: %1$s MB across %2$s total orders (%3$s older than retention). Estimated post-archival size: ~%4$s MB. Suggested threshold = post-archival × 2.', 'properf' ),
+						number_format( $current_mb, 2 ),
+						number_format( $total ),
+						number_format( $older ),
+						number_format( $healthy )
+					);
 				} elseif ( $suggested > 0 ) {
 					$suggestion_notice = __( 'DB is too small for archival planning — no threshold needed yet. Set manually if required.', 'properf' );
 				} else {
