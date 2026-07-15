@@ -209,10 +209,10 @@ class ProPerf_Admin_Dashboard {
 				<div class="properf-signal-banner <?php echo $archival_signal_active ? 'properf-signal-banner--alert' : 'properf-signal-banner--ok'; ?>">
 					<?php if ( $archival_signal_active ) : ?>
 						<strong class="properf-signal-banner__title--alert">&#9888; <?php esc_html_e( 'Archival recommended', 'properf' ); ?></strong>
-						<span class="properf-signal-banner__detail--alert"><?php echo esc_html( sprintf( __( 'Order itemmeta is %s MB — past the %s MB threshold with archivable orders present.', 'properf' ), number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
+						<span class="properf-signal-banner__detail--alert"><?php echo esc_html( sprintf( __( 'Order itemmeta is %1$s MB — past the %2$s MB threshold with archivable orders present.', 'properf' ), number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
 					<?php else : ?>
 						<strong class="properf-signal-banner__title--ok">&#10003; <?php esc_html_e( 'DB health: OK', 'properf' ); ?></strong>
-						<span class="properf-signal-banner__detail--ok"><?php echo esc_html( sprintf( __( 'Order itemmeta is %s MB — below the %s MB threshold.', 'properf' ), number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
+						<span class="properf-signal-banner__detail--ok"><?php echo esc_html( sprintf( __( 'Order itemmeta is %1$s MB — below the %2$s MB threshold.', 'properf' ), number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
 					<?php endif; ?>
 				</div>
 			<?php endif; ?>
