@@ -375,11 +375,13 @@ class ProPerf_Admin_Settings {
 	}
 
 	/**
-	 * Sanitize alert threshold — value arrives pre-converted to MB by the JS on the form.
-	 * Must be a positive integer, or empty to disable.
+	 * Sanitize alert threshold — raw numeric value in the unit specified by the
+	 * properf_order_itemmeta_db_alert_threshold_unit POST field. Converts GB to MB
+	 * server-side and stores the result in MB regardless of the submitted unit.
+	 * Empty or zero value disables the threshold.
 	 *
-	 * @param mixed $value Submitted value (always in MB).
-	 * @return int|string Sanitized MB value or empty string.
+	 * @param mixed $value Raw numeric value as submitted (in MB or GB depending on unit field).
+	 * @return int|string Sanitized MB value or empty string to disable.
 	 */
 	public static function sanitize_alert_threshold_mb( $value ) {
 		if ( '' === $value || null === $value ) {
