@@ -17,7 +17,7 @@ class ProPerf_Admin_Settings {
 	/**
 	 * Minimum suggested threshold in MB below which archival planning is not meaningful.
 	 */
-	const MIN_ARCHIVAL_THRESHOLD_MB = 500;
+	const MIN_ARCHIVAL_THRESHOLD_MB = 5;
 
 	/**
 	 * Register hooks that must fire in any context (CLI, REST, cron, frontend).
