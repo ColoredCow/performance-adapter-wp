@@ -387,17 +387,7 @@ class ProPerf_Admin_Settings {
 		if ( '' === $value || null === $value ) {
 			return '';
 		}
-		$unit    = isset( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] )
-			? sanitize_key( wp_unslash( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] ) )
-			: 'mb';
-		if ( ! in_array( $unit, array( 'mb', 'gb' ), true ) ) {
-			$unit = 'mb';
-		}
-		$numeric = floatval( $value );
-		if ( 'gb' === $unit ) {
-			$numeric *= 1024;
-		}
-		$mb = (int) round( $numeric );
+		$mb = (int) round( floatval( $value ) );
 		if ( $mb <= 0 ) {
 			if ( is_admin() && ! wp_doing_cron() ) {
 				add_settings_error(
@@ -521,6 +511,13 @@ class ProPerf_Admin_Settings {
 				}
 				setUnit( select.value );
 				select.dataset.prev = select.value;
+			} );
+			// Convert to MB before submit so the sanitize callback always receives MB.
+			form.addEventListener( 'submit', function () {
+				if ( select.value === 'gb' && input.value !== '' ) {
+					input.value = Math.round( parseFloat( input.value ) * 1024 );
+					setUnit( 'mb' );
+				}
 			} );
 		}());
 		</script>
