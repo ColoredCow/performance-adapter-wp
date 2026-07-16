@@ -390,12 +390,17 @@ class ProPerf_Admin_Settings {
 		$mb = (int) round( floatval( $value ) );
 		if ( $mb <= 0 ) {
 			if ( is_admin() && ! wp_doing_cron() ) {
+				$prior = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
+				$msg   = '' !== $prior
+					? __( 'DB size alert threshold must be a positive number. Previous value restored.', 'properf' )
+					: __( 'DB size alert threshold must be a positive number.', 'properf' );
 				add_settings_error(
 					'properf_messages',
 					'properf_alert_threshold_mb_invalid',
-					__( 'DB size alert threshold must be a positive number. Previous value restored.', 'properf' ),
+					$msg,
 					'error'
 				);
+				return $prior;
 			}
 			return get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
 		}

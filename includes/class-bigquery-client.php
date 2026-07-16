@@ -153,6 +153,7 @@ class ProPerf_BigQuery_Client {
 				->sourceFormat( 'NEWLINE_DELIMITED_JSON' )
 				->writeDisposition( 'WRITE_APPEND' )
 				->schema( $schema )
+				->schemaUpdateOptions( array( 'ALLOW_FIELD_ADDITION' ) )
 				->autodetect( false );
 
 			if ( $load_config instanceof \Google\Cloud\BigQuery\LoadJobConfiguration ) {
