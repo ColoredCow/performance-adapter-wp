@@ -207,9 +207,9 @@ class ProPerf_Data_Collector {
 		$baseline           = $this->get_baseline_qet( $last_archival_date );
 
 		$alert_threshold_mb     = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
-		$itemmeta_mb            = $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : 0.0;
+		$itemmeta_mb            = null !== $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : null;
 		$archival_signal_active = false;
-		if ( '' !== $alert_threshold_mb && (int) $alert_threshold_mb > 0 ) {
+		if ( null !== $itemmeta_mb && '' !== $alert_threshold_mb && (int) $alert_threshold_mb > 0 ) {
 			$archival_signal_active = $itemmeta_mb >= (float) $alert_threshold_mb && $orders_older_than_threshold > 0;
 		}
 
