@@ -428,6 +428,7 @@ class ProPerf_Admin_Settings {
 			$snapshot = get_transient( 'properf_woo_metrics_snapshot' );
 			if ( false === $snapshot && function_exists( 'WC' ) && class_exists( 'ProPerf_Data_Collector' ) ) {
 				$snapshot = ( new ProPerf_Data_Collector() )->collect_woo_order_metrics();
+				set_transient( 'properf_woo_metrics_snapshot', $snapshot, HOUR_IN_SECONDS );
 			}
 			$woo = isset( $snapshot['woo'] ) ? $snapshot['woo'] : null;
 
