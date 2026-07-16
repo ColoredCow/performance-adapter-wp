@@ -504,7 +504,7 @@ class ProPerf_Admin_Settings {
 			if ( input.value !== '' ) {
 				var mb = parseInt( input.value, 10 );
 				if ( mb >= 1024 ) {
-					input.value = Math.round( ( mb / 1024 ) * 100 ) / 100;
+					input.value = parseFloat( ( mb / 1024 ).toFixed( 4 ) );
 					setUnit( 'gb' );
 				}
 			}
@@ -514,7 +514,7 @@ class ProPerf_Admin_Settings {
 				var prev = select.dataset.prev;
 				if ( input.value !== '' ) {
 					if ( prev === 'mb' && select.value === 'gb' ) {
-						input.value = Math.round( ( parseFloat( input.value ) / 1024 ) * 100 ) / 100;
+						input.value = parseFloat( ( parseFloat( input.value ) / 1024 ).toFixed( 4 ) );
 					} else if ( prev === 'gb' && select.value === 'mb' ) {
 						input.value = Math.round( parseFloat( input.value ) * 1024 );
 					}
