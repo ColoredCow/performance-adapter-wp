@@ -460,7 +460,7 @@ class ProPerf_Admin_Settings {
 						number_format( $older ),
 						number_format( $healthy )
 					);
-				} elseif ( $suggested > 0 ) {
+				} elseif ( $healthy > 0 ) {
 					$suggestion_notice = __( 'DB is too small for archival planning — no threshold needed yet. Set manually if required.', 'properf' );
 				} else {
 					$suggestion_notice = __( 'Could not estimate a valid threshold from current data — set manually.', 'properf' );
