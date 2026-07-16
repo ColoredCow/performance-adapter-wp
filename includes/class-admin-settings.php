@@ -387,7 +387,17 @@ class ProPerf_Admin_Settings {
 		if ( '' === $value || null === $value ) {
 			return '';
 		}
-		$mb = (int) round( floatval( $value ) );
+		$unit = isset( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] )
+			? sanitize_key( wp_unslash( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] ) )
+			: 'mb';
+		if ( ! in_array( $unit, array( 'mb', 'gb' ), true ) ) {
+			$unit = 'mb';
+		}
+		$numeric = floatval( $value );
+		if ( 'gb' === $unit ) {
+			$numeric *= 1024;
+		}
+		$mb = (int) round( $numeric );
 		if ( $mb <= 0 ) {
 			if ( is_admin() && ! wp_doing_cron() ) {
 				$prior = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
@@ -493,8 +503,8 @@ class ProPerf_Admin_Settings {
 			if ( ! form ) return;
 			function setUnit( unit ) {
 				select.value = unit;
-				input.step   = unit === 'gb' ? '0.01' : '1';
-				input.min    = unit === 'gb' ? '0.01' : '1';
+				input.step   = unit === 'gb' ? 'any' : '1';
+				input.min    = unit === 'gb' ? '0.0001' : '1';
 			}
 			// On load: display in GB if value is >= 1024 MB.
 			if ( input.value !== '' ) {
@@ -517,13 +527,6 @@ class ProPerf_Admin_Settings {
 				}
 				setUnit( select.value );
 				select.dataset.prev = select.value;
-			} );
-			// Convert to MB before submit so the sanitize callback always receives MB.
-			form.addEventListener( 'submit', function () {
-				if ( select.value === 'gb' && input.value !== '' ) {
-					input.value = Math.round( parseFloat( input.value ) * 1024 );
-					setUnit( 'mb' );
-				}
 			} );
 		}());
 		</script>
