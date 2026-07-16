@@ -93,6 +93,8 @@ class ProPerf_Data_Collector {
 					'query_execution_ms'           => null,
 					'baseline_qet_ms'              => null,
 					'baseline_qet_source'          => null,
+					'archival_signal_active'       => false,
+					'alert_threshold_mb'           => null,
 				),
 			);
 		}
