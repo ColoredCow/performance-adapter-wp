@@ -15,6 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ProPerf_Admin_Settings {
 
 	/**
+	 * Minimum suggested threshold in MB below which archival planning is not meaningful.
+	 */
+	const MIN_ARCHIVAL_THRESHOLD_MB = 500;
+
+	/**
 	 * Register hooks that must fire in any context (CLI, REST, cron, frontend).
 	 */
 	public static function register_persistent_hooks() {
@@ -23,6 +28,9 @@ class ProPerf_Admin_Settings {
 		add_action( 'add_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 		add_action( 'update_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 		add_action( 'add_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'update_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'add_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'delete_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 	}
 
 	/**
@@ -128,6 +136,16 @@ class ProPerf_Admin_Settings {
 				'default'           => '',
 			)
 		);
+
+		register_setting(
+			'properf_bigquery_settings',
+			'properf_order_itemmeta_db_alert_threshold',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_alert_threshold_mb' ),
+				'default'           => '',
+			)
+		);
 	}
 
 	/**
@@ -205,6 +223,14 @@ class ProPerf_Admin_Settings {
 			'properf_last_archival_date',
 			__( 'Last Archival Date', 'properf' ),
 			array( __CLASS__, 'last_archival_date_field' ),
+			'properf-settings',
+			'properf_woo_section'
+		);
+
+		add_settings_field(
+			'properf_order_itemmeta_db_alert_threshold',
+			__( 'DB Size Alert Threshold', 'properf' ),
+			array( __CLASS__, 'order_itemmeta_alert_threshold_mb_field' ),
 			'properf-settings',
 			'properf_woo_section'
 		);
@@ -349,6 +375,49 @@ class ProPerf_Admin_Settings {
 	}
 
 	/**
+	 * Sanitize alert threshold — raw numeric value in the unit specified by the
+	 * properf_order_itemmeta_db_alert_threshold_unit POST field. Converts GB to MB
+	 * server-side and stores the result in MB regardless of the submitted unit.
+	 * Empty or zero value disables the threshold.
+	 *
+	 * @param mixed $value Raw numeric value as submitted (in MB or GB depending on unit field).
+	 * @return int|string Sanitized MB value or empty string to disable.
+	 */
+	public static function sanitize_alert_threshold_mb( $value ) {
+		if ( '' === $value || null === $value ) {
+			return '';
+		}
+		$unit = isset( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] )
+			? sanitize_key( wp_unslash( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] ) )
+			: 'mb';
+		if ( ! in_array( $unit, array( 'mb', 'gb' ), true ) ) {
+			$unit = 'mb';
+		}
+		$numeric = floatval( $value );
+		if ( 'gb' === $unit ) {
+			$numeric *= 1024;
+		}
+		$mb = (int) round( $numeric );
+		if ( $mb <= 0 ) {
+			if ( is_admin() && ! wp_doing_cron() ) {
+				$prior = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
+				$msg   = '' !== $prior
+					? __( 'DB size alert threshold must be a positive number. Previous value restored.', 'properf' )
+					: __( 'DB size alert threshold must be a positive number.', 'properf' );
+				add_settings_error(
+					'properf_messages',
+					'properf_alert_threshold_mb_invalid',
+					$msg,
+					'error'
+				);
+				return $prior;
+			}
+			return get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
+		}
+		return $mb;
+	}
+
+	/**
 	 * Last archival date field renderer.
 	 */
 	public static function last_archival_date_field() {
@@ -356,6 +425,111 @@ class ProPerf_Admin_Settings {
 		?>
 		<input type="date" id="properf_last_archival_date" name="properf_last_archival_date" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
 		<p class="description"><?php esc_html_e( 'Optional. Enter the date when orders were last archived for this client. Used as a reference point on the dashboard.', 'properf' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * DB size alert threshold field renderer.
+	 * Stores value in MB internally. The unit is submitted as a named form field
+	 * and converted to MB server-side in sanitize_alert_threshold_mb().
+	 * Pre-fills a suggested value when the field is empty and enough data exists.
+	 */
+	public static function order_itemmeta_alert_threshold_mb_field() {
+		$stored_mb = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
+
+		$suggestion_notice = '';
+
+		if ( '' === $stored_mb ) {
+			$snapshot = get_transient( 'properf_woo_metrics_snapshot' );
+			if ( false === $snapshot && function_exists( 'WC' ) && class_exists( 'ProPerf_Data_Collector' ) ) {
+				$snapshot = ( new ProPerf_Data_Collector() )->collect_woo_order_metrics();
+				set_transient( 'properf_woo_metrics_snapshot', $snapshot, HOUR_IN_SECONDS );
+			}
+			$woo = isset( $snapshot['woo'] ) ? $snapshot['woo'] : null;
+
+			if ( $woo && ! empty( $woo['total_orders'] ) && $woo['total_orders'] > 0 && ! empty( $woo['orders_older_than_threshold'] ) && $woo['orders_older_than_threshold'] > 0 ) {
+				$current_mb  = (float) $woo['order_itemmeta_size_mb'];
+				$total       = (int) $woo['total_orders'];
+				$older       = (int) $woo['orders_older_than_threshold'];
+				$avg_mb      = $current_mb / $total;
+				$archivable  = $avg_mb * $older;
+				$healthy     = $current_mb - $archivable;
+				$suggested   = (int) round( $healthy * 2 );
+
+				if ( $suggested >= self::MIN_ARCHIVAL_THRESHOLD_MB ) {
+					$stored_mb         = $suggested;
+					$suggestion_notice = sprintf(
+						/* translators: 1: itemmeta size MB, 2: total orders, 3: orders older than retention, 4: post-archival estimate MB */
+						__( 'Pre-filled from DB snapshot: %1$s MB across %2$s total orders (%3$s older than retention). Estimated post-archival size: ~%4$s MB. Suggested threshold = post-archival × 2.', 'properf' ),
+						number_format( $current_mb, 2 ),
+						number_format( $total ),
+						number_format( $older ),
+						number_format( $healthy )
+					);
+				} elseif ( $healthy > 0 ) {
+					$suggestion_notice = __( 'DB is too small for archival planning — no threshold needed yet. Set manually if required.', 'properf' );
+				} else {
+					$suggestion_notice = __( 'Could not estimate a valid threshold from current data — set manually.', 'properf' );
+				}
+			} elseif ( $woo && ( empty( $woo['orders_older_than_threshold'] ) || 0 === (int) $woo['orders_older_than_threshold'] ) ) {
+				$suggestion_notice = __( 'No archivable orders found for the current retention window — set threshold manually or leave empty to disable.', 'properf' );
+			}
+		}
+		?>
+		<div class="properf-threshold-input-wrap">
+			<input
+				type="number"
+				id="properf_order_itemmeta_db_alert_threshold"
+				name="properf_order_itemmeta_db_alert_threshold"
+				value="<?php echo esc_attr( $stored_mb ); ?>"
+				min="1"
+				step="1"
+				class="regular-text"
+			/>
+			<select id="properf_db_alert_threshold_unit" name="properf_order_itemmeta_db_alert_threshold_unit">
+				<option value="mb">MB</option>
+				<option value="gb">GB</option>
+			</select>
+		</div>
+		<p class="description"><?php esc_html_e( 'Alert when order_item_meta exceeds this size.', 'properf' ); ?></p>
+		<?php if ( $suggestion_notice ) : ?>
+			<p class="description properf-suggestion-notice"><?php echo esc_html( $suggestion_notice ); ?></p>
+		<?php endif; ?>
+		<script>
+		(function () {
+			var input  = document.getElementById( 'properf_order_itemmeta_db_alert_threshold' );
+			var select = document.getElementById( 'properf_db_alert_threshold_unit' );
+			var form   = input ? input.closest( 'form' ) : null;
+			if ( ! form ) return;
+			function setUnit( unit ) {
+				select.value = unit;
+				input.step   = unit === 'gb' ? 'any' : '1';
+				input.min    = unit === 'gb' ? '0.0001' : '1';
+			}
+			// On load: display in GB if value is >= 1024 MB.
+			if ( input.value !== '' ) {
+				var mb = parseInt( input.value, 10 );
+				if ( mb >= 1024 ) {
+					input.value = parseFloat( ( mb / 1024 ).toFixed( 4 ) );
+					setUnit( 'gb' );
+				}
+			}
+			// Track current unit so the change handler can convert the input value.
+			select.dataset.prev = select.value;
+			select.addEventListener( 'change', function () {
+				var prev = select.dataset.prev;
+				if ( input.value !== '' ) {
+					if ( prev === 'mb' && select.value === 'gb' ) {
+						input.value = parseFloat( ( parseFloat( input.value ) / 1024 ).toFixed( 4 ) );
+					} else if ( prev === 'gb' && select.value === 'mb' ) {
+						input.value = Math.round( parseFloat( input.value ) * 1024 );
+					}
+				}
+				setUnit( select.value );
+				select.dataset.prev = select.value;
+			} );
+		}());
+		</script>
 		<?php
 	}
 

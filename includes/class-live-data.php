@@ -39,6 +39,8 @@ class ProPerf_Live_Data {
 				'query_execution_ms'          => 0,
 				'baseline_qet_ms'             => null,
 				'baseline_qet_source'         => null,
+				'archival_signal_active'      => false,
+				'alert_threshold_mb'          => null,
 			),
 		);
 	}

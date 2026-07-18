@@ -93,6 +93,8 @@ class ProPerf_Data_Collector {
 					'query_execution_ms'           => null,
 					'baseline_qet_ms'              => null,
 					'baseline_qet_source'          => null,
+					'archival_signal_active'       => false,
+					'alert_threshold_mb'           => null,
 				),
 			);
 		}
@@ -204,19 +206,28 @@ class ProPerf_Data_Collector {
 		$last_archival_date = get_option( 'properf_last_archival_date', null ) ?: null;
 		$baseline           = $this->get_baseline_qet( $last_archival_date );
 
+		$alert_threshold_mb     = get_option( 'properf_order_itemmeta_db_alert_threshold', '' );
+		$itemmeta_mb            = null !== $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : null;
+		$archival_signal_active = false;
+		if ( null !== $itemmeta_mb && '' !== $alert_threshold_mb && (int) $alert_threshold_mb > 0 ) {
+			$archival_signal_active = $itemmeta_mb >= (float) $alert_threshold_mb && $orders_older_than_threshold > 0;
+		}
+
 		$result = array(
 			'woo' => array(
-				'order_items_size_mb'    => $items_size ? round( floatval( $items_size ), 4 ) : 0.0,
-				'order_itemmeta_size_mb' => $itemmeta_size ? round( floatval( $itemmeta_size ), 4 ) : 0.0,
-				'oldest_order_date'      => $oldest_order_date ? gmdate( 'Y-m-d', strtotime( $oldest_order_date . ' UTC' ) ) : null,
-				'latest_order_date'      => $latest_order_date ? gmdate( 'Y-m-d', strtotime( $latest_order_date . ' UTC' ) ) : null,
+				'order_items_size_mb'         => $items_size ? round( floatval( $items_size ), 4 ) : 0.0,
+				'order_itemmeta_size_mb'      => $itemmeta_mb,
+				'oldest_order_date'           => $oldest_order_date ? gmdate( 'Y-m-d', strtotime( $oldest_order_date . ' UTC' ) ) : null,
+				'latest_order_date'           => $latest_order_date ? gmdate( 'Y-m-d', strtotime( $latest_order_date . ' UTC' ) ) : null,
 				'orders_older_than_threshold' => $orders_older_than_threshold,
 				'total_orders'                => $total_orders,
 				'threshold_years'             => $threshold_years,
-				'last_archival_date'     => $last_archival_date,
-				'query_execution_ms'     => $query_execution_ms,
-				'baseline_qet_ms'        => $baseline['ms'],
-				'baseline_qet_source'    => $baseline['source'],
+				'last_archival_date'          => $last_archival_date,
+				'query_execution_ms'          => $query_execution_ms,
+				'baseline_qet_ms'             => $baseline['ms'],
+				'baseline_qet_source'         => $baseline['source'],
+				'archival_signal_active'      => $archival_signal_active,
+				'alert_threshold_mb'          => '' !== $alert_threshold_mb ? (int) $alert_threshold_mb : null,
 			),
 		);
 
@@ -414,18 +425,21 @@ class ProPerf_Data_Collector {
 		$timestamp = gmdate( 'Y-m-d H:i:s' );
 
 		return array(
-			'timestamp_utc'              => $timestamp,
-			'autoloaded_option_count'    => $metrics['autoloaded_option']['count'],
-			'autoloaded_option_size'     => $metrics['autoloaded_option']['size_bytes'],
-			'site_url'                   => $site_url,
-			'woo_order_items_size_mb'    => $metrics['woo']['order_items_size_mb'],
-			'woo_order_itemmeta_size_mb' => $metrics['woo']['order_itemmeta_size_mb'],
-			'woo_oldest_order_date'      => $metrics['woo']['oldest_order_date'],
-			'woo_latest_order_date'      => $metrics['woo']['latest_order_date'],
+			'timestamp_utc'                   => $timestamp,
+			'autoloaded_option_count'         => $metrics['autoloaded_option']['count'],
+			'autoloaded_option_size'          => $metrics['autoloaded_option']['size_bytes'],
+			'site_url'                        => $site_url,
+			'woo_order_items_size_mb'         => $metrics['woo']['order_items_size_mb'],
+			'woo_order_itemmeta_size_mb'      => $metrics['woo']['order_itemmeta_size_mb'],
+			'woo_oldest_order_date'           => $metrics['woo']['oldest_order_date'],
+			'woo_latest_order_date'           => $metrics['woo']['latest_order_date'],
 			'woo_orders_older_than_threshold' => $metrics['woo']['orders_older_than_threshold'],
-			'woo_last_archival_date'     => $metrics['woo']['last_archival_date'],
-			'woo_query_execution_ms'     => $metrics['woo']['query_execution_ms'],
-			'woo_baseline_qet_ms'        => $metrics['woo']['baseline_qet_ms'],
+			'woo_total_orders'                => $metrics['woo']['total_orders'],
+			'woo_last_archival_date'          => $metrics['woo']['last_archival_date'],
+			'woo_query_execution_ms'          => $metrics['woo']['query_execution_ms'],
+			'woo_baseline_qet_ms'             => $metrics['woo']['baseline_qet_ms'],
+			'woo_archival_signal_active'      => $metrics['woo']['archival_signal_active'],
+			'woo_alert_threshold_mb'          => $metrics['woo']['alert_threshold_mb'],
 		);
 	}
 }

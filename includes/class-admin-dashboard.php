@@ -159,7 +159,9 @@ class ProPerf_Admin_Dashboard {
 		$total_orders                = $woo_metrics['total_orders'];
 		$threshold_years             = $woo_metrics['threshold_years'];
 		$last_archival_date          = $woo_metrics['last_archival_date'];
-		$baseline_qet_ms             = $woo_metrics['baseline_qet_ms'];
+		$baseline_qet_ms        = $woo_metrics['baseline_qet_ms'];
+		$alert_threshold_mb     = $woo_metrics['alert_threshold_mb'] ?? null;
+		$archival_signal_active = $woo_metrics['archival_signal_active'] ?? false;
 
 		$last_sync = get_option( 'properf_bq_last_sync' );
 
@@ -199,6 +201,18 @@ class ProPerf_Admin_Dashboard {
 				<?php wp_nonce_field( 'properf_push_action', 'properf_push_nonce' ); ?>
 				<input type="submit" name="properf_push_to_bq" class="button button-primary" value="<?php esc_attr_e( 'Push to BigQuery', 'properf' ); ?>">
 			</form>
+
+			<?php if ( function_exists( 'WC' ) && null !== $alert_threshold_mb ) : ?>
+				<div class="properf-signal-banner <?php echo esc_attr( $archival_signal_active ? 'properf-signal-banner--alert' : 'properf-signal-banner--ok' ); ?>">
+					<?php if ( $archival_signal_active ) : ?>
+						<strong class="properf-signal-banner__title--alert">&#9888; <?php esc_html_e( 'Archival recommended', 'properf' ); ?></strong>
+						<span class="properf-signal-banner__detail--alert"><?php echo esc_html( sprintf( __( 'Order itemmeta is %1$s MB — past the %2$s MB threshold with archivable orders present.', 'properf' ), number_format( (float) $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
+					<?php else : ?>
+						<strong class="properf-signal-banner__title--ok">&#10003; <?php esc_html_e( 'DB health: OK', 'properf' ); ?></strong>
+						<span class="properf-signal-banner__detail--ok"><?php echo esc_html( sprintf( __( 'Order itemmeta is %1$s MB — below the %2$s MB threshold.', 'properf' ), number_format( (float) $woo_metrics['order_itemmeta_size_mb'], 2 ), number_format( $alert_threshold_mb ) ) ); ?></span>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
 
 			<h2><?php esc_html_e( 'Summary Metrics', 'properf' ); ?></h2>
 			<table class="widefat striped">

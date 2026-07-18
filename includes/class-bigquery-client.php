@@ -131,18 +131,21 @@ class ProPerf_BigQuery_Client {
 			rewind( $stream );
 			$schema = array(
 				'fields' => array(
-					array( 'name' => 'timestamp_utc',              'type' => 'TIMESTAMP'                    ),
-					array( 'name' => 'autoloaded_option_count',    'type' => 'INTEGER'                      ),
-					array( 'name' => 'autoloaded_option_size',     'type' => 'INTEGER'                      ),
-					array( 'name' => 'site_url',                   'type' => 'STRING'                       ),
-					array( 'name' => 'woo_order_items_size_mb',    'type' => 'FLOAT'                        ),
-					array( 'name' => 'woo_order_itemmeta_size_mb', 'type' => 'FLOAT'                        ),
-					array( 'name' => 'woo_oldest_order_date',      'type' => 'DATE',    'mode' => 'NULLABLE' ),
-					array( 'name' => 'woo_latest_order_date',      'type' => 'DATE',    'mode' => 'NULLABLE' ),
-					array( 'name' => 'woo_orders_older_than_threshold', 'type' => 'INTEGER'                      ),
-					array( 'name' => 'woo_last_archival_date',     'type' => 'DATE',    'mode' => 'NULLABLE' ),
-					array( 'name' => 'woo_query_execution_ms',     'type' => 'INTEGER'                      ),
-					array( 'name' => 'woo_baseline_qet_ms',        'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'timestamp_utc',                   'type' => 'TIMESTAMP'                    ),
+					array( 'name' => 'autoloaded_option_count',         'type' => 'INTEGER'                      ),
+					array( 'name' => 'autoloaded_option_size',          'type' => 'INTEGER'                      ),
+					array( 'name' => 'site_url',                        'type' => 'STRING'                       ),
+					array( 'name' => 'woo_order_items_size_mb',         'type' => 'FLOAT',   'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_order_itemmeta_size_mb',      'type' => 'FLOAT',   'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_oldest_order_date',           'type' => 'DATE',    'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_latest_order_date',           'type' => 'DATE',    'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_orders_older_than_threshold', 'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_total_orders',                'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_last_archival_date',          'type' => 'DATE',    'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_query_execution_ms',          'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_baseline_qet_ms',             'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_archival_signal_active',      'type' => 'BOOLEAN', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'woo_alert_threshold_mb',          'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
 				),
 			);
 
@@ -150,6 +153,7 @@ class ProPerf_BigQuery_Client {
 				->sourceFormat( 'NEWLINE_DELIMITED_JSON' )
 				->writeDisposition( 'WRITE_APPEND' )
 				->schema( $schema )
+				->schemaUpdateOptions( array( 'ALLOW_FIELD_ADDITION' ) )
 				->autodetect( false );
 
 			if ( $load_config instanceof \Google\Cloud\BigQuery\LoadJobConfiguration ) {
