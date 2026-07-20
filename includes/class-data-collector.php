@@ -493,12 +493,14 @@ class ProPerf_Data_Collector {
 	 * @return array Formatted data for BigQuery.
 	 */
 	public function format_for_bigquery( $metrics ) {
-		$site_url         = get_site_url();
-		$timestamp        = gmdate( 'Y-m-d H:i:s' );
-		$table_sizes_json = wp_json_encode( $metrics['server']['db_table_sizes'] );
-		if ( false === $table_sizes_json ) {
-			error_log( 'ProPerf Error: Failed to JSON-encode db_table_sizes for ' . $site_url . ' — possible non-UTF-8 table name. Sending empty object to BigQuery.' );
-			$table_sizes_json = '{}';
+		$site_url    = get_site_url();
+		$timestamp   = gmdate( 'Y-m-d H:i:s' );
+		$table_sizes = array();
+		foreach ( $metrics['server']['db_table_sizes'] as $name => $size_mb ) {
+			$table_sizes[] = array(
+				'name'    => $name,
+				'size_mb' => $size_mb,
+			);
 		}
 
 		return array(
@@ -521,7 +523,7 @@ class ProPerf_Data_Collector {
 			'inactive_plugin_count'           => $metrics['server']['inactive_plugin_count'],
 			'hook_count'                      => $metrics['server']['hook_count'],
 			'total_db_size_mb'                => $metrics['server']['total_db_size_mb'],
-			'db_table_sizes_json'             => $table_sizes_json,
+			'db_table_sizes'                  => $table_sizes,
 		);
 	}
 }
