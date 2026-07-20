@@ -154,13 +154,13 @@ class ProPerf_Admin_Dashboard {
 		$server_metrics = $metrics['server'];
 		$woo_metrics    = $metrics['woo'];
 		$oldest_date    = $woo_metrics['oldest_order_date'];
-		$latest_date = $woo_metrics['latest_order_date'];
+		$latest_date    = $woo_metrics['latest_order_date'];
 
 		$orders_older_than_threshold = $woo_metrics['orders_older_than_threshold'];
 		$total_orders                = $woo_metrics['total_orders'];
 		$threshold_years             = $woo_metrics['threshold_years'];
 		$last_archival_date          = $woo_metrics['last_archival_date'];
-		$baseline_qet_ms        = $woo_metrics['baseline_qet_ms'];
+		$baseline_qet_ms             = $woo_metrics['baseline_qet_ms'];
 		$alert_threshold_mb     = $woo_metrics['alert_threshold_mb'] ?? null;
 		$archival_signal_active = $woo_metrics['archival_signal_active'] ?? false;
 
