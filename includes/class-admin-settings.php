@@ -473,7 +473,11 @@ class ProPerf_Admin_Settings {
 					$suggestion_notice = __( 'Could not estimate a valid threshold from current data — set manually.', 'properf' );
 				}
 			} elseif ( $woo && ( empty( $woo['orders_older_than_threshold'] ) || 0 === (int) $woo['orders_older_than_threshold'] ) ) {
-				$suggestion_notice = __( 'No archivable orders found for the current retention window — set threshold manually or leave empty to disable.', 'properf' );
+				if ( empty( $woo['total_orders'] ) || 0 === (int) $woo['total_orders'] ) {
+					$suggestion_notice = __( 'No orders yet — leave empty to disable the alert.', 'properf' );
+				} else {
+					$suggestion_notice = __( 'No archivable orders found for the current retention window — set threshold manually or leave empty to disable.', 'properf' );
+				}
 			}
 		}
 		?>
