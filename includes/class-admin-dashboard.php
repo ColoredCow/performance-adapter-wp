@@ -203,7 +203,7 @@ class ProPerf_Admin_Dashboard {
 				<input type="submit" name="properf_push_to_bq" class="button button-primary" value="<?php esc_attr_e( 'Push to BigQuery', 'properf' ); ?>">
 			</form>
 
-			<?php if ( function_exists( 'WC' ) && null !== $alert_threshold_mb ) : ?>
+			<?php if ( function_exists( 'WC' ) && null !== $alert_threshold_mb && null !== $woo_metrics['order_itemmeta_size_mb'] ) : ?>
 				<div class="properf-signal-banner <?php echo esc_attr( $archival_signal_active ? 'properf-signal-banner--alert' : 'properf-signal-banner--ok' ); ?>">
 					<?php if ( $archival_signal_active ) : ?>
 						<strong class="properf-signal-banner__title--alert">&#9888; <?php esc_html_e( 'Archival recommended', 'properf' ); ?></strong>
@@ -273,7 +273,7 @@ class ProPerf_Admin_Dashboard {
 						</tr>
 						<tr>
 							<td><strong><?php esc_html_e( 'Order Itemmeta Table Size', 'properf' ); ?></strong></td>
-							<td><?php echo esc_html( number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ) . ' MB' ); ?></td>
+							<td><?php echo esc_html( null !== $woo_metrics['order_itemmeta_size_mb'] ? number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ) . ' MB' : '—' ); ?></td>
 						</tr>
 						<tr>
 							<td><strong><?php esc_html_e( 'Oldest Order Date', 'properf' ); ?></strong></td>
