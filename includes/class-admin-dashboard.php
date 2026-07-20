@@ -151,8 +151,9 @@ class ProPerf_Admin_Dashboard {
 		$size_bytes     = $autoloaded_data_metrics['size_bytes'];
 		$top_size_keys  = $autoloaded_data_metrics['top_size_keys'];
 
-		$woo_metrics = $metrics['woo'];
-		$oldest_date = $woo_metrics['oldest_order_date'];
+		$server_metrics = $metrics['server'];
+		$woo_metrics    = $metrics['woo'];
+		$oldest_date    = $woo_metrics['oldest_order_date'];
 		$latest_date = $woo_metrics['latest_order_date'];
 
 		$orders_older_than_threshold = $woo_metrics['orders_older_than_threshold'];
@@ -316,6 +317,54 @@ class ProPerf_Admin_Dashboard {
 				</table>
 			<?php else : ?>
 				<p><?php esc_html_e( 'WooCommerce is not active on this site.', 'properf' ); ?></p>
+			<?php endif; ?>
+
+			<h2 class="properf-section-heading"><?php esc_html_e( 'Server Metrics', 'properf' ); ?></h2>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Metric', 'properf' ); ?></th>
+						<th><?php esc_html_e( 'Value', 'properf' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><strong><?php esc_html_e( 'Active Plugins', 'properf' ); ?></strong></td>
+						<td><?php echo esc_html( number_format( $server_metrics['active_plugin_count'] ) ); ?></td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Inactive Plugins', 'properf' ); ?></strong></td>
+						<td><?php echo esc_html( number_format( $server_metrics['inactive_plugin_count'] ) ); ?></td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Registered Hook Callbacks', 'properf' ); ?></strong></td>
+						<td><?php echo esc_html( number_format( $server_metrics['hook_count'] ) ); ?></td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Total Database Size', 'properf' ); ?></strong></td>
+						<td><?php echo esc_html( number_format( $server_metrics['total_db_size_mb'], 2 ) . ' MB' ); ?></td>
+					</tr>
+				</tbody>
+			</table>
+
+			<?php if ( ! empty( $server_metrics['db_table_sizes'] ) ) : ?>
+				<h2 class="properf-section-heading"><?php esc_html_e( 'Database Tables by Size', 'properf' ); ?></h2>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Table', 'properf' ); ?></th>
+							<th><?php esc_html_e( 'Size', 'properf' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $server_metrics['db_table_sizes'] as $table_name => $size_mb ) : ?>
+							<tr>
+								<td><?php echo esc_html( $table_name ); ?></td>
+								<td><?php echo esc_html( number_format( $size_mb, 2 ) . ' MB' ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
 			<?php endif; ?>
 		</div>
 		<?php

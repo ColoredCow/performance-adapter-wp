@@ -146,6 +146,11 @@ class ProPerf_BigQuery_Client {
 					array( 'name' => 'woo_baseline_qet_ms',             'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
 					array( 'name' => 'woo_archival_signal_active',      'type' => 'BOOLEAN', 'mode' => 'NULLABLE' ),
 					array( 'name' => 'woo_alert_threshold_mb',          'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'active_plugin_count',             'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'inactive_plugin_count',           'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'hook_count',                      'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
+					array( 'name' => 'total_db_size_mb',                'type' => 'FLOAT',   'mode' => 'NULLABLE' ),
+					array( 'name' => 'db_table_sizes_json',             'type' => 'STRING',  'mode' => 'NULLABLE' ),
 				),
 			);
 

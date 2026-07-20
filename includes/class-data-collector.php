@@ -24,7 +24,8 @@ class ProPerf_Data_Collector {
 	public function get_data() {
 		return array_merge(
 			$this->collect_autoloaded_options(),
-			$this->collect_woo_order_metrics()
+			$this->collect_woo_order_metrics(),
+			$this->collect_server_metrics()
 		);
 	}
 
@@ -237,6 +238,62 @@ class ProPerf_Data_Collector {
 	}
 
 	/**
+	 * Collect server-level metrics: plugin counts, hook callback count, and DB table sizes.
+	 *
+	 * @return array Server metrics keyed under 'server'.
+	 */
+	public function collect_server_metrics() {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		$all_plugins    = get_plugins();
+		$active_plugins = get_option( 'active_plugins', array() );
+		$active_count   = count( $active_plugins );
+		$inactive_count = count( $all_plugins ) - $active_count;
+
+		global $wp_filter;
+		$hook_count = 0;
+		foreach ( $wp_filter as $hook ) {
+			foreach ( $hook->callbacks as $priority_callbacks ) {
+				$hook_count += count( $priority_callbacks );
+			}
+		}
+
+		global $wpdb;
+		$db_name = DB_NAME;
+		$tables  = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT TABLE_NAME as table_name,
+					ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024, 4) as size_mb
+				FROM information_schema.TABLES
+				WHERE TABLE_SCHEMA = %s
+				ORDER BY (DATA_LENGTH + INDEX_LENGTH) DESC',
+				$db_name
+			)
+		);
+
+		$db_table_sizes   = array();
+		$total_db_size_mb = 0.0;
+		if ( $tables ) {
+			foreach ( $tables as $table ) {
+				$size_mb                                 = floatval( $table->size_mb );
+				$db_table_sizes[ $table->table_name ] = $size_mb;
+				$total_db_size_mb                       += $size_mb;
+			}
+		}
+
+		return array(
+			'server' => array(
+				'active_plugin_count'   => $active_count,
+				'inactive_plugin_count' => $inactive_count,
+				'hook_count'            => $hook_count,
+				'db_table_sizes'        => $db_table_sizes,
+				'total_db_size_mb'      => round( $total_db_size_mb, 4 ),
+			),
+		);
+	}
+
+	/**
 	 * Record a QET reading for baseline computation. Call after each successful push.
 	 * Multiple same-day pushes are averaged into a single daily entry.
 	 *
@@ -440,6 +497,11 @@ class ProPerf_Data_Collector {
 			'woo_baseline_qet_ms'             => $metrics['woo']['baseline_qet_ms'],
 			'woo_archival_signal_active'      => $metrics['woo']['archival_signal_active'],
 			'woo_alert_threshold_mb'          => $metrics['woo']['alert_threshold_mb'],
+			'active_plugin_count'             => $metrics['server']['active_plugin_count'],
+			'inactive_plugin_count'           => $metrics['server']['inactive_plugin_count'],
+			'hook_count'                      => $metrics['server']['hook_count'],
+			'total_db_size_mb'                => $metrics['server']['total_db_size_mb'],
+			'db_table_sizes_json'             => wp_json_encode( $metrics['server']['db_table_sizes'] ),
 		);
 	}
 }

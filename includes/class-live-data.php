@@ -27,6 +27,13 @@ class ProPerf_Live_Data {
 				'top_size_keys' => array(),
 				'error'         => null,
 			),
+			'server'            => array(
+				'active_plugin_count'   => 0,
+				'inactive_plugin_count' => 0,
+				'hook_count'            => 0,
+				'db_table_sizes'        => array(),
+				'total_db_size_mb'      => 0.0,
+			),
 			'woo'               => array(
 				'order_items_size_mb'         => 0.0,
 				'order_itemmeta_size_mb'      => 0.0,
