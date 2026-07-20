@@ -348,7 +348,7 @@ class ProPerf_Admin_Dashboard {
 			</table>
 
 			<?php if ( ! empty( $server_metrics['db_table_sizes'] ) ) : ?>
-				<h2 class="properf-section-heading"><?php esc_html_e( 'Database Tables by Size', 'properf' ); ?></h2>
+				<h2 class="properf-section-heading"><?php esc_html_e( 'Top 10 Database Tables by Size', 'properf' ); ?></h2>
 				<table class="widefat striped">
 					<thead>
 						<tr>
@@ -357,7 +357,7 @@ class ProPerf_Admin_Dashboard {
 						</tr>
 					</thead>
 					<tbody>
-						<?php foreach ( $server_metrics['db_table_sizes'] as $table_name => $size_mb ) : ?>
+						<?php foreach ( array_slice( $server_metrics['db_table_sizes'], 0, 10, true ) as $table_name => $size_mb ) : ?>
 							<tr>
 								<td><?php echo esc_html( $table_name ); ?></td>
 								<td><?php echo esc_html( number_format( $size_mb, 2 ) . ' MB' ); ?></td>
