@@ -388,7 +388,7 @@ class ProPerf_Admin_Settings {
 		if ( '' === $value || null === $value ) {
 			return '';
 		}
-		$unit = isset( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] )
+		$unit = ( ! empty( $_POST ) && isset( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] ) )
 			? sanitize_key( wp_unslash( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] ) )
 			: 'mb';
 		if ( ! in_array( $unit, array( 'mb', 'gb' ), true ) ) {
