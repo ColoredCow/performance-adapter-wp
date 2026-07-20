@@ -288,7 +288,7 @@ class ProPerf_Data_Collector {
 				$clean    = iconv( 'UTF-8', 'UTF-8//IGNORE', $raw_name );
 				if ( $clean !== $raw_name ) {
 					$had_invalid_names = true;
-					if ( '' === $clean ) {
+					if ( false === $clean || '' === $clean ) {
 						continue;
 					}
 				}
