@@ -198,6 +198,26 @@ class ProPerf_Admin_Dashboard {
 
 			<?php settings_errors( 'properf_messages' ); ?>
 
+			<?php
+			$table_name_warning = get_option( 'properf_table_name_encoding_warning' );
+			if ( $table_name_warning ) :
+				?>
+				<div class="notice notice-warning">
+					<p>
+						<strong><?php esc_html_e( 'ProPerf Warning:', 'properf' ); ?></strong>
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %s: date and time the issue was last detected */
+								__( 'One or more database table names contain special characters that cannot be encoded (detected %s). Those table names have been sanitized before sending to BigQuery. Remove any non-standard characters from affected table names to resolve this.', 'properf' ),
+								$table_name_warning
+							)
+						);
+						?>
+					</p>
+				</div>
+			<?php endif; ?>
+
 			<form method="post" class="properf-push-form">
 				<?php wp_nonce_field( 'properf_push_action', 'properf_push_nonce' ); ?>
 				<input type="submit" name="properf_push_to_bq" class="button button-primary" value="<?php esc_attr_e( 'Push to BigQuery', 'properf' ); ?>">

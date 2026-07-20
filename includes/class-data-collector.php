@@ -273,14 +273,28 @@ class ProPerf_Data_Collector {
 			)
 		);
 
-		$db_table_sizes   = array();
-		$total_db_size_mb = 0.0;
+		$db_table_sizes    = array();
+		$total_db_size_mb  = 0.0;
+		$had_invalid_names = false;
 		if ( $tables ) {
 			foreach ( $tables as $table ) {
-				$size_mb                                 = floatval( $table->size_mb );
-				$db_table_sizes[ $table->table_name ] = $size_mb;
-				$total_db_size_mb                       += $size_mb;
+				$raw_name = $table->table_name;
+				$clean    = iconv( 'UTF-8', 'UTF-8//IGNORE', $raw_name );
+				if ( $clean !== $raw_name ) {
+					$had_invalid_names = true;
+					if ( '' === $clean ) {
+						continue;
+					}
+				}
+				$size_mb                      = floatval( $table->size_mb );
+				$db_table_sizes[ $clean ]     = $size_mb;
+				$total_db_size_mb            += $size_mb;
 			}
+		}
+		if ( $had_invalid_names ) {
+			update_option( 'properf_table_name_encoding_warning', gmdate( 'Y-m-d H:i:s' ) );
+		} else {
+			delete_option( 'properf_table_name_encoding_warning' );
 		}
 
 		return array(
