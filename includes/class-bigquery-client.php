@@ -184,7 +184,6 @@ class ProPerf_BigQuery_Client {
 				return false;
 			}
 
-			update_option( 'properf_bq_last_sync', time() );
 			return true;
 		} catch ( GoogleException $e ) {
 			$this->last_error = 'Google SDK Error: ' . $e->getMessage();
