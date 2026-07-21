@@ -252,10 +252,10 @@ class ProPerf_Data_Collector {
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
-		validate_active_plugins();
 		$all_plugins    = get_plugins();
 		$active_plugins = get_option( 'active_plugins', array() );
-		$active_count   = count( $active_plugins );
+		$active_keys    = array_intersect( $active_plugins, array_keys( $all_plugins ) );
+		$active_count   = count( $active_keys );
 		$inactive_count = count( $all_plugins ) - $active_count;
 
 		global $wp_filter;
