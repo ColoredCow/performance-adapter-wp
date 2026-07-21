@@ -310,12 +310,6 @@ class ProPerf_Data_Collector {
 				$total_db_size_mb            += $size_mb;
 			}
 		}
-		if ( $had_invalid_names ) {
-			update_option( 'properf_table_name_encoding_warning', gmdate( 'Y-m-d H:i:s' ) );
-		} else {
-			delete_option( 'properf_table_name_encoding_warning' );
-		}
-
 		$warning_timestamp = $had_invalid_names ? gmdate( 'Y-m-d H:i:s' ) : '';
 		$result            = array(
 			'_had_invalid_names' => $warning_timestamp,
@@ -329,7 +323,7 @@ class ProPerf_Data_Collector {
 		);
 		if ( $had_invalid_names ) {
 			update_option( 'properf_table_name_encoding_warning', $warning_timestamp );
-		} else {
+		} elseif ( get_option( 'properf_table_name_encoding_warning' ) ) {
 			delete_option( 'properf_table_name_encoding_warning' );
 		}
 		set_transient( self::SERVER_METRICS_CACHE_KEY, $result, HOUR_IN_SECONDS );
