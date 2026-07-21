@@ -16,6 +16,7 @@ class ProPerf_Data_Collector {
 
 	const WOO_METRICS_CACHE_KEY       = 'properf_woo_metrics_snapshot';
 	const SERVER_METRICS_CACHE_KEY    = 'properf_server_metrics_snapshot';
+	const PLUGIN_METRICS_CACHE_KEY    = 'properf_plugin_metrics_snapshot';
 	const AUTOLOAD_METRICS_CACHE_KEY  = 'properf_autoload_metrics_snapshot';
 
 	/**
@@ -247,18 +248,15 @@ class ProPerf_Data_Collector {
 	}
 
 	/**
-	 * Collect server-level metrics: plugin counts, hook callback count, and DB table sizes.
+	 * Collect active/inactive plugin count and hook callback count.
+	 * Cached separately from table sizes: this data changes on plugin (de)activation,
+	 * not on general DB writes, so it has its own invalidation triggers and TTL.
 	 *
-	 * @return array Server metrics keyed under 'server'.
+	 * @return array {active_plugin_count, inactive_plugin_count, hook_count}
 	 */
-	public function collect_server_metrics() {
-		$cached = get_transient( self::SERVER_METRICS_CACHE_KEY );
+	private function collect_plugin_stats() {
+		$cached = get_transient( self::PLUGIN_METRICS_CACHE_KEY );
 		if ( false !== $cached ) {
-			if ( ! empty( $cached['_had_invalid_names'] ) ) {
-				update_option( 'properf_table_name_encoding_warning', $cached['_had_invalid_names'] );
-			} elseif ( get_option( 'properf_table_name_encoding_warning' ) ) {
-				delete_option( 'properf_table_name_encoding_warning' );
-			}
 			return $cached;
 		}
 
@@ -267,6 +265,16 @@ class ProPerf_Data_Collector {
 		}
 		$all_plugins    = get_plugins();
 		$active_plugins = get_option( 'active_plugins', array() );
+		if ( is_multisite() ) {
+			// Network-activated plugins live in a site option, not this site's
+			// active_plugins — without this they're miscounted as inactive.
+			$active_plugins = array_unique(
+				array_merge(
+					$active_plugins,
+					array_keys( get_site_option( 'active_sitewide_plugins', array() ) )
+				)
+			);
+		}
 		$active_keys    = array_intersect( $active_plugins, array_keys( $all_plugins ) );
 		$active_count   = count( $active_keys );
 		$inactive_count = count( $all_plugins ) - $active_count;
@@ -284,6 +292,28 @@ class ProPerf_Data_Collector {
 			foreach ( $hook->callbacks as $priority_callbacks ) {
 				$hook_count += count( $priority_callbacks );
 			}
+		}
+
+		$result = array(
+			'active_plugin_count'   => $active_count,
+			'inactive_plugin_count' => $inactive_count,
+			'hook_count'            => $hook_count,
+		);
+		set_transient( self::PLUGIN_METRICS_CACHE_KEY, $result, HOUR_IN_SECONDS );
+		return $result;
+	}
+
+	/**
+	 * Collect per-table DB sizes, the total DB size, and any table-name encoding warning.
+	 * Cached separately from plugin stats: this data changes on general DB writes,
+	 * not plugin (de)activation, so it isn't busted by plugin-toggle hooks.
+	 *
+	 * @return array {db_table_sizes, total_db_size_mb, table_name_warning}
+	 */
+	private function collect_table_stats() {
+		$cached = get_transient( self::SERVER_METRICS_CACHE_KEY );
+		if ( false !== $cached ) {
+			return $cached;
 		}
 
 		global $wpdb;
@@ -305,36 +335,49 @@ class ProPerf_Data_Collector {
 		if ( $tables ) {
 			foreach ( $tables as $table ) {
 				$raw_name = $table->table_name;
-				$clean    = iconv( 'UTF-8', 'UTF-8//IGNORE', $raw_name );
+				$clean    = function_exists( 'iconv' ) ? iconv( 'UTF-8', 'UTF-8//IGNORE', $raw_name ) : $raw_name;
+				$size_mb  = floatval( $table->size_mb );
+				// Always count toward the total, even if the name can't be
+				// displayed cleanly — an unreadable name shouldn't shrink the
+				// reported DB size.
+				$total_db_size_mb += $size_mb;
+
 				if ( $clean !== $raw_name ) {
 					$had_invalid_names = true;
 					if ( false === $clean || '' === $clean ) {
 						continue;
 					}
 				}
-				$size_mb                      = floatval( $table->size_mb );
-				$db_table_sizes[ $clean ]     = $size_mb;
-				$total_db_size_mb            += $size_mb;
+
+				// Two distinct corrupted names can sanitize to the same string;
+				// accumulate rather than overwrite so the total always matches
+				// the sum of the displayed rows.
+				if ( isset( $db_table_sizes[ $clean ] ) ) {
+					$db_table_sizes[ $clean ] += $size_mb;
+				} else {
+					$db_table_sizes[ $clean ] = $size_mb;
+				}
 			}
 		}
-		$warning_timestamp = $had_invalid_names ? gmdate( 'Y-m-d H:i:s' ) : '';
-		$result            = array(
-			'_had_invalid_names' => $warning_timestamp,
-			'server'             => array(
-				'active_plugin_count'   => $active_count,
-				'inactive_plugin_count' => $inactive_count,
-				'hook_count'            => $hook_count,
-				'db_table_sizes'        => $db_table_sizes,
-				'total_db_size_mb'      => round( $total_db_size_mb, 4 ),
-			),
+
+		$result = array(
+			'db_table_sizes'     => $db_table_sizes,
+			'total_db_size_mb'   => round( $total_db_size_mb, 4 ),
+			'table_name_warning' => $had_invalid_names ? gmdate( 'Y-m-d H:i:s' ) : '',
 		);
-		if ( $had_invalid_names ) {
-			update_option( 'properf_table_name_encoding_warning', $warning_timestamp );
-		} elseif ( get_option( 'properf_table_name_encoding_warning' ) ) {
-			delete_option( 'properf_table_name_encoding_warning' );
-		}
 		set_transient( self::SERVER_METRICS_CACHE_KEY, $result, HOUR_IN_SECONDS );
 		return $result;
+	}
+
+	/**
+	 * Collect server-level metrics: plugin counts, hook callback count, and DB table sizes.
+	 *
+	 * @return array Server metrics keyed under 'server'.
+	 */
+	public function collect_server_metrics() {
+		return array(
+			'server' => array_merge( $this->collect_plugin_stats(), $this->collect_table_stats() ),
+		);
 	}
 
 	/**
@@ -414,9 +457,7 @@ class ProPerf_Data_Collector {
 	public function collect_and_push() {
 		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
 
-		delete_transient( self::WOO_METRICS_CACHE_KEY );
-		delete_transient( self::SERVER_METRICS_CACHE_KEY );
-		delete_transient( self::AUTOLOAD_METRICS_CACHE_KEY );
+		self::bust_metrics_cache();
 
 		try {
 			$metrics = $this->get_data();
@@ -517,6 +558,10 @@ class ProPerf_Data_Collector {
 		delete_transient( self::AUTOLOAD_METRICS_CACHE_KEY );
 	}
 
+	public static function bust_plugin_metrics_cache() {
+		delete_transient( self::PLUGIN_METRICS_CACHE_KEY );
+	}
+
 	public static function bust_server_metrics_cache() {
 		delete_transient( self::SERVER_METRICS_CACHE_KEY );
 	}
@@ -524,6 +569,7 @@ class ProPerf_Data_Collector {
 	public static function bust_metrics_cache() {
 		self::bust_woo_metrics_cache();
 		self::bust_autoload_metrics_cache();
+		self::bust_plugin_metrics_cache();
 		self::bust_server_metrics_cache();
 	}
 

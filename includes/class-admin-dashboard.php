@@ -191,7 +191,7 @@ class ProPerf_Admin_Dashboard {
 			$last_pushed_display = __( 'Never', 'properf' );
 		}
 
-		$table_name_warning = get_option( 'properf_table_name_encoding_warning' );
+		$table_name_warning = $server_metrics['table_name_warning'] ?? '';
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'ProPerf WordPress Metrics', 'properf' ); ?></h1>

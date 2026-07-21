@@ -33,6 +33,7 @@ class ProPerf_Live_Data {
 				'hook_count'            => 0,
 				'db_table_sizes'        => array(),
 				'total_db_size_mb'      => 0.0,
+				'table_name_warning'    => '',
 			),
 			'woo'               => array(
 				'order_items_size_mb'         => 0.0,
