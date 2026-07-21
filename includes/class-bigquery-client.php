@@ -150,15 +150,6 @@ class ProPerf_BigQuery_Client {
 					array( 'name' => 'inactive_plugin_count',           'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
 					array( 'name' => 'hook_count',                      'type' => 'INTEGER', 'mode' => 'NULLABLE' ),
 					array( 'name' => 'total_db_size_mb',                'type' => 'FLOAT',   'mode' => 'NULLABLE' ),
-					array(
-						'name'   => 'db_table_sizes',
-						'type'   => 'RECORD',
-						'mode'   => 'REPEATED',
-						'fields' => array(
-							array( 'name' => 'name',    'type' => 'STRING' ),
-							array( 'name' => 'size_mb', 'type' => 'FLOAT'  ),
-						),
-					),
 				),
 			);
 

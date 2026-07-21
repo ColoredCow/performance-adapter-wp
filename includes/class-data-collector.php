@@ -525,15 +525,8 @@ class ProPerf_Data_Collector {
 	 * @return array Formatted data for BigQuery.
 	 */
 	public function format_for_bigquery( $metrics ) {
-		$site_url    = get_site_url();
-		$timestamp   = gmdate( 'Y-m-d H:i:s' );
-		$table_sizes = array();
-		foreach ( $metrics['server']['db_table_sizes'] as $name => $size_mb ) {
-			$table_sizes[] = array(
-				'name'    => $name,
-				'size_mb' => $size_mb,
-			);
-		}
+		$site_url  = get_site_url();
+		$timestamp = gmdate( 'Y-m-d H:i:s' );
 
 		return array(
 			'timestamp_utc'                   => $timestamp,
@@ -555,7 +548,6 @@ class ProPerf_Data_Collector {
 			'inactive_plugin_count'           => $metrics['server']['inactive_plugin_count'],
 			'hook_count'                      => $metrics['server']['hook_count'],
 			'total_db_size_mb'                => $metrics['server']['total_db_size_mb'],
-			'db_table_sizes'                  => $table_sizes,
 		);
 	}
 }
