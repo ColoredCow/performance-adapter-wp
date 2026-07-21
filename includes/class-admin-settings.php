@@ -443,10 +443,10 @@ class ProPerf_Admin_Settings {
 		$suggestion_notice = '';
 
 		if ( '' === $stored_mb ) {
-			$snapshot = get_transient( 'properf_woo_metrics_snapshot' );
+			$snapshot = get_transient( ProPerf_Data_Collector::WOO_METRICS_CACHE_KEY );
 			if ( false === $snapshot && function_exists( 'WC' ) && class_exists( 'ProPerf_Data_Collector' ) ) {
 				$snapshot = ( new ProPerf_Data_Collector() )->collect_woo_order_metrics();
-				set_transient( 'properf_woo_metrics_snapshot', $snapshot, HOUR_IN_SECONDS );
+				set_transient( ProPerf_Data_Collector::WOO_METRICS_CACHE_KEY, $snapshot, HOUR_IN_SECONDS );
 			}
 			$woo = isset( $snapshot['woo'] ) ? $snapshot['woo'] : null;
 
