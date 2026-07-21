@@ -246,6 +246,11 @@ class ProPerf_Data_Collector {
 	public function collect_server_metrics() {
 		$cached = get_transient( self::SERVER_METRICS_CACHE_KEY );
 		if ( false !== $cached ) {
+			if ( ! empty( $cached['_had_invalid_names'] ) ) {
+				update_option( 'properf_table_name_encoding_warning', $cached['_had_invalid_names'] );
+			} else {
+				delete_option( 'properf_table_name_encoding_warning' );
+			}
 			return $cached;
 		}
 
@@ -303,8 +308,10 @@ class ProPerf_Data_Collector {
 			delete_option( 'properf_table_name_encoding_warning' );
 		}
 
-		$result = array(
-			'server' => array(
+		$warning_timestamp = $had_invalid_names ? gmdate( 'Y-m-d H:i:s' ) : '';
+		$result            = array(
+			'_had_invalid_names' => $warning_timestamp,
+			'server'             => array(
 				'active_plugin_count'   => $active_count,
 				'inactive_plugin_count' => $inactive_count,
 				'hook_count'            => $hook_count,
@@ -312,6 +319,11 @@ class ProPerf_Data_Collector {
 				'total_db_size_mb'      => round( $total_db_size_mb, 4 ),
 			),
 		);
+		if ( $had_invalid_names ) {
+			update_option( 'properf_table_name_encoding_warning', $warning_timestamp );
+		} else {
+			delete_option( 'properf_table_name_encoding_warning' );
+		}
 		set_transient( self::SERVER_METRICS_CACHE_KEY, $result, HOUR_IN_SECONDS );
 		return $result;
 	}
