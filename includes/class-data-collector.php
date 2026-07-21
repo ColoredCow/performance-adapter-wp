@@ -271,6 +271,10 @@ class ProPerf_Data_Collector {
 		$active_count   = count( $active_keys );
 		$inactive_count = count( $all_plugins ) - $active_count;
 
+		// Counts callbacks registered in $wp_filter at the moment this method runs
+		// (typically cron context or admin dashboard). Not "hooks per frontend
+		// page" — frontend-only hooks registered later in the request lifecycle
+		// aren't counted. Meant as a directional signal for plugin-stack heaviness.
 		global $wp_filter;
 		$hook_count = 0;
 		foreach ( $wp_filter as $hook ) {
@@ -412,6 +416,7 @@ class ProPerf_Data_Collector {
 
 		delete_transient( self::WOO_METRICS_CACHE_KEY );
 		delete_transient( self::SERVER_METRICS_CACHE_KEY );
+		delete_transient( self::AUTOLOAD_METRICS_CACHE_KEY );
 
 		try {
 			$metrics = $this->get_data();
@@ -506,6 +511,9 @@ class ProPerf_Data_Collector {
 
 	public static function bust_woo_metrics_cache() {
 		delete_transient( self::WOO_METRICS_CACHE_KEY );
+	}
+
+	public static function bust_autoload_metrics_cache() {
 		delete_transient( self::AUTOLOAD_METRICS_CACHE_KEY );
 	}
 
@@ -515,6 +523,7 @@ class ProPerf_Data_Collector {
 
 	public static function bust_metrics_cache() {
 		self::bust_woo_metrics_cache();
+		self::bust_autoload_metrics_cache();
 		self::bust_server_metrics_cache();
 	}
 
