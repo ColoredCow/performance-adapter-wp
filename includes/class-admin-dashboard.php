@@ -190,6 +190,8 @@ class ProPerf_Admin_Dashboard {
 		} else {
 			$last_pushed_display = __( 'Never', 'properf' );
 		}
+
+		$table_name_warning = get_option( 'properf_table_name_encoding_warning' );
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'ProPerf WordPress Metrics', 'properf' ); ?></h1>
@@ -198,10 +200,7 @@ class ProPerf_Admin_Dashboard {
 
 			<?php settings_errors( 'properf_messages' ); ?>
 
-			<?php
-			$table_name_warning = get_option( 'properf_table_name_encoding_warning' );
-			if ( $table_name_warning ) :
-				?>
+			<?php if ( $table_name_warning ) : ?>
 				<div class="notice notice-warning">
 					<p>
 						<strong><?php esc_html_e( 'ProPerf Warning:', 'properf' ); ?></strong>
