@@ -24,13 +24,13 @@ class ProPerf_Admin_Settings {
 	 */
 	public static function register_persistent_hooks() {
 		add_action( 'update_option_properf_last_archival_date', array( __CLASS__, 'reset_qet_on_archival_change' ), 10, 2 );
-		add_action( 'update_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'add_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'update_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'add_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'update_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'add_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'delete_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'update_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'add_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'update_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'add_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'update_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'add_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'delete_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
 		add_action( 'activate_' . plugin_basename( PROPERF_DIR . 'properf-wordpress-adapter.php' ), array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 	}
 
@@ -40,8 +40,8 @@ class ProPerf_Admin_Settings {
 	public static function init() {
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ), 20 );
 		add_filter( 'wp_redirect', array( __CLASS__, 'settings_redirect' ) );
-		add_action( 'activated_plugin',   array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'deactivated_plugin', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'activated_plugin',   array( 'ProPerf_Data_Collector', 'bust_server_metrics_cache' ) );
+		add_action( 'deactivated_plugin', array( 'ProPerf_Data_Collector', 'bust_server_metrics_cache' ) );
 	}
 
 	/**

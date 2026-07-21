@@ -506,14 +506,18 @@ class ProPerf_Data_Collector {
 		);
 	}
 
-	/**
-	 * Delete the cached WooCommerce metrics snapshot.
-	 * Called by settings hooks when archival date or threshold changes.
-	 */
-	public static function bust_metrics_cache() {
+	public static function bust_woo_metrics_cache() {
 		delete_transient( self::WOO_METRICS_CACHE_KEY );
-		delete_transient( self::SERVER_METRICS_CACHE_KEY );
 		delete_transient( self::AUTOLOAD_METRICS_CACHE_KEY );
+	}
+
+	public static function bust_server_metrics_cache() {
+		delete_transient( self::SERVER_METRICS_CACHE_KEY );
+	}
+
+	public static function bust_metrics_cache() {
+		self::bust_woo_metrics_cache();
+		self::bust_server_metrics_cache();
 	}
 
 	/**
