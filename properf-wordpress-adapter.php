@@ -28,6 +28,7 @@ require_once PROPERF_DIR . 'includes/class-admin-dashboard.php';
  */
 function properf_activate_plugin() {
 	properf_schedule_metrics_collection();
+	ProPerf_Data_Collector::bust_metrics_cache();
 }
 register_activation_hook( __FILE__, 'properf_activate_plugin' );
 

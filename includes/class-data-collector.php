@@ -256,7 +256,7 @@ class ProPerf_Data_Collector {
 		if ( false !== $cached ) {
 			if ( ! empty( $cached['_had_invalid_names'] ) ) {
 				update_option( 'properf_table_name_encoding_warning', $cached['_had_invalid_names'] );
-			} else {
+			} elseif ( get_option( 'properf_table_name_encoding_warning' ) ) {
 				delete_option( 'properf_table_name_encoding_warning' );
 			}
 			return $cached;
@@ -274,6 +274,9 @@ class ProPerf_Data_Collector {
 		global $wp_filter;
 		$hook_count = 0;
 		foreach ( $wp_filter as $hook ) {
+			if ( ! ( $hook instanceof WP_Hook ) ) {
+				continue;
+			}
 			foreach ( $hook->callbacks as $priority_callbacks ) {
 				$hook_count += count( $priority_callbacks );
 			}
@@ -408,6 +411,7 @@ class ProPerf_Data_Collector {
 		require_once PROPERF_DIR . 'includes/class-bigquery-client.php';
 
 		delete_transient( self::WOO_METRICS_CACHE_KEY );
+		delete_transient( self::SERVER_METRICS_CACHE_KEY );
 
 		try {
 			$metrics = $this->get_data();
