@@ -14,8 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ProPerf_Data_Collector {
 
-	const WOO_METRICS_CACHE_KEY    = 'properf_woo_metrics_snapshot';
-	const SERVER_METRICS_CACHE_KEY = 'properf_server_metrics_snapshot';
+	const WOO_METRICS_CACHE_KEY       = 'properf_woo_metrics_snapshot';
+	const SERVER_METRICS_CACHE_KEY    = 'properf_server_metrics_snapshot';
+	const AUTOLOAD_METRICS_CACHE_KEY  = 'properf_autoload_metrics_snapshot';
 
 	/**
 	 * Get collected data.
@@ -36,6 +37,11 @@ class ProPerf_Data_Collector {
 	 * @return array Autoloaded options data.
 	 */
 	public function collect_autoloaded_options() {
+		$cached = get_transient( self::AUTOLOAD_METRICS_CACHE_KEY );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
 		global $wpdb;
 		$autoload_clause = "autoload IN ('yes', 'on', 'auto', 'auto-on')";
 
@@ -65,7 +71,7 @@ class ProPerf_Data_Collector {
 			}
 		}
 
-		return array(
+		$result = array(
 			'autoloaded_option' => array(
 				'count'         => $autoloaded_option_count,
 				'size_bytes'    => $autoloaded_option_size_bytes,
@@ -73,6 +79,8 @@ class ProPerf_Data_Collector {
 				'error'         => null,
 			),
 		);
+		set_transient( self::AUTOLOAD_METRICS_CACHE_KEY, $result, HOUR_IN_SECONDS );
+		return $result;
 	}
 
 	/**
@@ -505,6 +513,7 @@ class ProPerf_Data_Collector {
 	public static function bust_metrics_cache() {
 		delete_transient( self::WOO_METRICS_CACHE_KEY );
 		delete_transient( self::SERVER_METRICS_CACHE_KEY );
+		delete_transient( self::AUTOLOAD_METRICS_CACHE_KEY );
 	}
 
 	/**
