@@ -24,13 +24,37 @@ class ProPerf_Admin_Settings {
 	 */
 	public static function register_persistent_hooks() {
 		add_action( 'update_option_properf_last_archival_date', array( __CLASS__, 'reset_qet_on_archival_change' ), 10, 2 );
-		add_action( 'update_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'add_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'update_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'add_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'update_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'add_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
-		add_action( 'delete_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'update_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'add_option_properf_last_archival_date', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'update_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'add_option_properf_archival_threshold_years', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'update_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'add_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'delete_option_properf_order_itemmeta_db_alert_threshold', array( 'ProPerf_Data_Collector', 'bust_woo_metrics_cache' ) );
+		add_action( 'activated_plugin',   array( 'ProPerf_Data_Collector', 'bust_plugin_metrics_cache' ) );
+		add_action( 'activated_plugin',   array( 'ProPerf_Data_Collector', 'bust_autoload_metrics_cache' ) );
+		add_action( 'deactivated_plugin', array( 'ProPerf_Data_Collector', 'bust_plugin_metrics_cache' ) );
+		add_action( 'deactivated_plugin', array( 'ProPerf_Data_Collector', 'bust_autoload_metrics_cache' ) );
+		add_action( 'deleted_plugin',     array( 'ProPerf_Data_Collector', 'bust_plugin_metrics_cache' ) );
+		add_action( 'deleted_plugin',     array( 'ProPerf_Data_Collector', 'bust_autoload_metrics_cache' ) );
+		add_action( 'upgrader_process_complete', array( __CLASS__, 'bust_plugin_cache_on_install' ), 10, 2 );
+	}
+
+	/**
+	 * Bust plugin/autoload caches when a new plugin is installed (whether or not
+	 * it's then activated) — plugin count and autoload footprint can change
+	 * immediately on install, before any activated_plugin hook would fire.
+	 *
+	 * @param WP_Upgrader $upgrader   Unused.
+	 * @param array       $hook_extra Contains 'type' and 'action' for this upgrader run.
+	 */
+	public static function bust_plugin_cache_on_install( $upgrader, $hook_extra ) {
+		if ( isset( $hook_extra['type'], $hook_extra['action'] )
+			&& 'plugin' === $hook_extra['type']
+			&& 'install' === $hook_extra['action'] ) {
+			ProPerf_Data_Collector::bust_plugin_metrics_cache();
+			ProPerf_Data_Collector::bust_autoload_metrics_cache();
+		}
 	}
 
 	/**
@@ -387,7 +411,7 @@ class ProPerf_Admin_Settings {
 		if ( '' === $value || null === $value ) {
 			return '';
 		}
-		$unit = isset( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] )
+		$unit = ( ! empty( $_POST ) && isset( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] ) )
 			? sanitize_key( wp_unslash( $_POST['properf_order_itemmeta_db_alert_threshold_unit'] ) )
 			: 'mb';
 		if ( ! in_array( $unit, array( 'mb', 'gb' ), true ) ) {
@@ -440,11 +464,11 @@ class ProPerf_Admin_Settings {
 		$suggestion_notice = '';
 
 		if ( '' === $stored_mb ) {
-			$snapshot = get_transient( 'properf_woo_metrics_snapshot' );
-			if ( false === $snapshot && function_exists( 'WC' ) && class_exists( 'ProPerf_Data_Collector' ) ) {
-				$snapshot = ( new ProPerf_Data_Collector() )->collect_woo_order_metrics();
-				set_transient( 'properf_woo_metrics_snapshot', $snapshot, HOUR_IN_SECONDS );
-			}
+			// collect_woo_order_metrics() already caches its own result — no need
+			// to wrap it in a second get_transient()/set_transient() pair here.
+			$snapshot = ( function_exists( 'WC' ) && class_exists( 'ProPerf_Data_Collector' ) )
+				? ( new ProPerf_Data_Collector() )->collect_woo_order_metrics()
+				: false;
 			$woo = isset( $snapshot['woo'] ) ? $snapshot['woo'] : null;
 
 			if ( $woo && ! empty( $woo['total_orders'] ) && $woo['total_orders'] > 0 && ! empty( $woo['orders_older_than_threshold'] ) && $woo['orders_older_than_threshold'] > 0 ) {
@@ -472,7 +496,11 @@ class ProPerf_Admin_Settings {
 					$suggestion_notice = __( 'Could not estimate a valid threshold from current data — set manually.', 'properf' );
 				}
 			} elseif ( $woo && ( empty( $woo['orders_older_than_threshold'] ) || 0 === (int) $woo['orders_older_than_threshold'] ) ) {
-				$suggestion_notice = __( 'No archivable orders found for the current retention window — set threshold manually or leave empty to disable.', 'properf' );
+				if ( empty( $woo['total_orders'] ) || 0 === (int) $woo['total_orders'] ) {
+					$suggestion_notice = __( 'No orders yet — leave empty to disable the alert.', 'properf' );
+				} else {
+					$suggestion_notice = __( 'No archivable orders found for the current retention window — set threshold manually or leave empty to disable.', 'properf' );
+				}
 			}
 		}
 		?>

@@ -3,7 +3,7 @@
  * Plugin Name: ProPerf WordPress Adapter
  * Plugin URI: https://coloredcow.com
  * Description: Collects and displays database health metrics (autoloaded options)
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: ColoredCow
  * License: GPL v2 or later
  *
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'PROPERF_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PROPERF_URL', plugin_dir_url( __FILE__ ) );
-define( 'PROPERF_VERSION', '1.1.0' );
+define( 'PROPERF_VERSION', '1.2.0' );
 
 require_once PROPERF_DIR . 'includes/class-data-collector.php';
 require_once PROPERF_DIR . 'includes/class-live-data.php';
@@ -28,6 +28,7 @@ require_once PROPERF_DIR . 'includes/class-admin-dashboard.php';
  */
 function properf_activate_plugin() {
 	properf_schedule_metrics_collection();
+	ProPerf_Data_Collector::bust_metrics_cache();
 }
 register_activation_hook( __FILE__, 'properf_activate_plugin' );
 

@@ -151,15 +151,16 @@ class ProPerf_Admin_Dashboard {
 		$size_bytes     = $autoloaded_data_metrics['size_bytes'];
 		$top_size_keys  = $autoloaded_data_metrics['top_size_keys'];
 
-		$woo_metrics = $metrics['woo'];
-		$oldest_date = $woo_metrics['oldest_order_date'];
-		$latest_date = $woo_metrics['latest_order_date'];
+		$server_metrics = $metrics['server'];
+		$woo_metrics    = $metrics['woo'];
+		$oldest_date    = $woo_metrics['oldest_order_date'];
+		$latest_date    = $woo_metrics['latest_order_date'];
 
 		$orders_older_than_threshold = $woo_metrics['orders_older_than_threshold'];
 		$total_orders                = $woo_metrics['total_orders'];
 		$threshold_years             = $woo_metrics['threshold_years'];
 		$last_archival_date          = $woo_metrics['last_archival_date'];
-		$baseline_qet_ms        = $woo_metrics['baseline_qet_ms'];
+		$baseline_qet_ms             = $woo_metrics['baseline_qet_ms'];
 		$alert_threshold_mb     = $woo_metrics['alert_threshold_mb'] ?? null;
 		$archival_signal_active = $woo_metrics['archival_signal_active'] ?? false;
 
@@ -189,6 +190,8 @@ class ProPerf_Admin_Dashboard {
 		} else {
 			$last_pushed_display = __( 'Never', 'properf' );
 		}
+
+		$table_name_warning = $server_metrics['table_name_warning'] ?? '';
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'ProPerf WordPress Metrics', 'properf' ); ?></h1>
@@ -197,12 +200,29 @@ class ProPerf_Admin_Dashboard {
 
 			<?php settings_errors( 'properf_messages' ); ?>
 
+			<?php if ( $table_name_warning ) : ?>
+				<div class="notice notice-warning">
+					<p>
+						<strong><?php esc_html_e( 'ProPerf Warning:', 'properf' ); ?></strong>
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %s: date and time the issue was last detected */
+								__( 'One or more database table names contain special characters that cannot be encoded (detected %s). Those table names have been sanitized before sending to BigQuery. Remove any non-standard characters from affected table names to resolve this.', 'properf' ),
+								$table_name_warning
+							)
+						);
+						?>
+					</p>
+				</div>
+			<?php endif; ?>
+
 			<form method="post" class="properf-push-form">
 				<?php wp_nonce_field( 'properf_push_action', 'properf_push_nonce' ); ?>
 				<input type="submit" name="properf_push_to_bq" class="button button-primary" value="<?php esc_attr_e( 'Push to BigQuery', 'properf' ); ?>">
 			</form>
 
-			<?php if ( function_exists( 'WC' ) && null !== $alert_threshold_mb ) : ?>
+			<?php if ( function_exists( 'WC' ) && null !== $alert_threshold_mb && null !== $woo_metrics['order_itemmeta_size_mb'] ) : ?>
 				<div class="properf-signal-banner <?php echo esc_attr( $archival_signal_active ? 'properf-signal-banner--alert' : 'properf-signal-banner--ok' ); ?>">
 					<?php if ( $archival_signal_active ) : ?>
 						<strong class="properf-signal-banner__title--alert">&#9888; <?php esc_html_e( 'Archival recommended', 'properf' ); ?></strong>
@@ -272,7 +292,7 @@ class ProPerf_Admin_Dashboard {
 						</tr>
 						<tr>
 							<td><strong><?php esc_html_e( 'Order Itemmeta Table Size', 'properf' ); ?></strong></td>
-							<td><?php echo esc_html( number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ) . ' MB' ); ?></td>
+							<td><?php echo esc_html( null !== $woo_metrics['order_itemmeta_size_mb'] ? number_format( $woo_metrics['order_itemmeta_size_mb'], 2 ) . ' MB' : '—' ); ?></td>
 						</tr>
 						<tr>
 							<td><strong><?php esc_html_e( 'Oldest Order Date', 'properf' ); ?></strong></td>
@@ -316,6 +336,54 @@ class ProPerf_Admin_Dashboard {
 				</table>
 			<?php else : ?>
 				<p><?php esc_html_e( 'WooCommerce is not active on this site.', 'properf' ); ?></p>
+			<?php endif; ?>
+
+			<h2 class="properf-section-heading"><?php esc_html_e( 'Server Metrics', 'properf' ); ?></h2>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Metric', 'properf' ); ?></th>
+						<th><?php esc_html_e( 'Value', 'properf' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><strong><?php esc_html_e( 'Active Plugins', 'properf' ); ?></strong></td>
+						<td><?php echo esc_html( number_format( $server_metrics['active_plugin_count'] ) ); ?></td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Inactive Plugins', 'properf' ); ?></strong></td>
+						<td><?php echo esc_html( number_format( $server_metrics['inactive_plugin_count'] ) ); ?></td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Registered Hook Callbacks', 'properf' ); ?></strong></td>
+						<td><?php echo esc_html( number_format( $server_metrics['hook_count'] ) ); ?></td>
+					</tr>
+					<tr>
+						<td><strong><?php esc_html_e( 'Total Database Size', 'properf' ); ?></strong></td>
+						<td><?php echo esc_html( number_format( $server_metrics['total_db_size_mb'], 2 ) . ' MB' ); ?></td>
+					</tr>
+				</tbody>
+			</table>
+
+			<?php if ( ! empty( $server_metrics['db_table_sizes'] ) ) : ?>
+				<h2 class="properf-section-heading"><?php esc_html_e( 'Top 10 Database Tables by Size', 'properf' ); ?></h2>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Table', 'properf' ); ?></th>
+							<th><?php esc_html_e( 'Size', 'properf' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( array_slice( $server_metrics['db_table_sizes'], 0, 10, true ) as $table_name => $size_mb ) : ?>
+							<tr>
+								<td><?php echo esc_html( $table_name ); ?></td>
+								<td><?php echo esc_html( number_format( $size_mb, 2 ) . ' MB' ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
 			<?php endif; ?>
 		</div>
 		<?php
