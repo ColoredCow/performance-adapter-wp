@@ -40,6 +40,8 @@ class ProPerf_Admin_Settings {
 	public static function init() {
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ), 20 );
 		add_filter( 'wp_redirect', array( __CLASS__, 'settings_redirect' ) );
+		add_action( 'activated_plugin',   array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
+		add_action( 'deactivated_plugin', array( 'ProPerf_Data_Collector', 'bust_metrics_cache' ) );
 	}
 
 	/**
